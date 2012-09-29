@@ -34,14 +34,17 @@ namespace QTPFS {
 		unsigned int GetPathFinderType() const { return PFS_TYPE_QTPFS; }
 		boost::uint32_t GetPathCheckSum() const { return pfsCheckSum; }
 
-		bool PathUpdated(unsigned int pathID);
+		bool PathUpdated(ST_FUNC unsigned int pathID);
 
-		void TerrainChange(unsigned int x1, unsigned int z1,  unsigned int x2, unsigned int z2);
-		void Update();
-		void UpdatePath(const CSolidObject* owner, unsigned int pathID);
-		void DeletePath(unsigned int pathID);
+		void TerrainChange(ST_FUNC unsigned int x1, unsigned int z1,  unsigned int x2, unsigned int z2);
+		void Update(ST_FUNC int unused = 0);
+		void UpdatePath(ST_FUNC const CSolidObject* owner, unsigned int pathID);
+		void DeletePath(ST_FUNC unsigned int pathID);
+
+		void MergePathCaches();
 
 		unsigned int RequestPath(
+			ST_FUNC
 			const MoveDef* moveDef,
 			const float3& sourcePos,
 			const float3& targetPos,
@@ -51,6 +54,7 @@ namespace QTPFS {
 		);
 
 		float3 NextWayPoint(
+			ST_FUNC
 			unsigned int pathID,
 			float3 point,
 			float radius = 0.0f,
@@ -60,6 +64,7 @@ namespace QTPFS {
 		);
 
 		void GetPathWayPoints(
+			ST_FUNC
 			unsigned int pathID,
 			std::vector<float3>& points,
 			std::vector<int>& starts

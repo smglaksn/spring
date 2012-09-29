@@ -4,6 +4,7 @@
 #include "Threading.h"
 #include "System/myMath.h"
 #include "System/Log/ILog.h"
+#include "System/Platform/CrashHandler.h"
 
 #include <boost/version.hpp>
 #include <boost/thread.hpp>
@@ -32,6 +33,18 @@ namespace Threading {
 	static boost::thread::id simThreadID;
 	static boost::thread::id batchThreadID;
 #endif	
+#if MULTITHREADED_SIM
+	bool multiThreadedSim = false;
+	int threadCurrentUnitIDs[2 * GML_MAX_NUM_THREADS + 10];
+#endif
+#if THREADED_PATH
+	bool threadedPath = false;
+#endif
+
+void MultiThreadSimErrorFunc() { LOG_L(L_ERROR, "Non-threadsafe sim code reached from multithreaded context"); CrashHandler::OutputStacktrace(); }
+void NonThreadedPathErrorFunc() { LOG_L(L_ERROR, "Non-threadsafe path code reached from threaded context"); CrashHandler::OutputStacktrace(); }
+void ThreadNotUnitOwnerErrorFunc() { LOG_L(L_ERROR, "Illegal attempt to modify a unit not owned by the current thread"); CrashHandler::OutputStacktrace(); }
+
 	boost::uint32_t SetAffinity(boost::uint32_t cores_bitmask, bool hard)
 	{
 		if (cores_bitmask == 0) {

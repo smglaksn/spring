@@ -4,6 +4,7 @@
 #define MOVETYPE_H
 
 #include "System/creg/creg_cond.h"
+#include "System/Platform/Threading.h"
 #include "Sim/Misc/AirBaseHandler.h"
 #include "System/Object.h"
 #include "System/float3.h"
@@ -45,6 +46,23 @@ public:
 	virtual bool IsSkidding() const { return false; }
 	virtual bool IsFlying() const { return false; }
 	virtual bool IsReversing() const { return false; }
+
+#if STABLE_UPDATE
+	bool stableIsSkidding;
+	bool stableIsFlying;
+	float3 stableGoalPos;
+	// shall return "stable" values, that do not suddenly change during a sim frame. (for multithreading purposes)
+	bool StableIsSkidding() const { return stableIsSkidding; }
+	bool StableIsFlying() const { return stableIsFlying; }
+	const float3& StableGoalPos() const { return stableGoalPos; }
+
+	/*virtual*/ void StableUpdate(bool slow);
+	void StableSlowUpdate();
+#else
+	bool StableIsSkidding() const { return IsSkidding(); }
+	bool StableIsFlying() const { return IsFlying(); }
+	const float3& StableGoalPos() const { return goalPos; }
+#endif
 
 	virtual void ReservePad(CAirBaseHandler::LandingPad* lp) { /* AAirMoveType only */ }
 	virtual void UnreservePad(CAirBaseHandler::LandingPad* lp) { /* AAirMoveType only */ }

@@ -77,7 +77,7 @@ CFeature::CFeature() : CSolidObject(),
 CFeature::~CFeature()
 {
 	if (blocking) {
-		UnBlock();
+		QueUnBlock();
 	}
 
 	qf->RemoveFeature(this);
@@ -184,7 +184,7 @@ void CFeature::Initialize(const float3& _pos, const FeatureDef* _def, short int 
 	ChangeTeam(team);
 
 	if (blocking) {
-		Block();
+		QueBlock();
 	}
 
 	if (def->floating) {
@@ -198,6 +198,7 @@ void CFeature::Initialize(const float3& _pos, const FeatureDef* _def, short int 
 	}
 
 	reachedFinalPos = (speed == ZeroVector && pos.y == finalHeight);
+	StableUpdate(true);
 }
 
 
@@ -389,7 +390,7 @@ void CFeature::DependentDied(CObject *o)
 void CFeature::ForcedMove(const float3& newPos, bool snapToGround)
 {
 	if (blocking) {
-		UnBlock();
+		QueUnBlock();
 	}
 
 	// remove from managers
@@ -417,7 +418,7 @@ void CFeature::ForcedMove(const float3& newPos, bool snapToGround)
 	qf->AddFeature(this);
 
 	if (blocking) {
-		Block();
+		QueBlock();
 	}
 }
 
@@ -455,7 +456,7 @@ bool CFeature::UpdatePosition()
 			deathSpeed *= (1.0f - (int(reachedGround) * 0.10f));
 
 			if (deathSpeed.SqLength2D() > 0.01f) {
-				UnBlock();
+				QueUnBlock();
 				qf->RemoveFeature(this);
 
 				// update our forward speed (and quadfield
@@ -463,7 +464,7 @@ bool CFeature::UpdatePosition()
 				Move3D(deathSpeed, true);
 
 				qf->AddFeature(this);
-				Block();
+				QueBlock();
 			} else {
 				deathSpeed.x = 0.0f;
 				deathSpeed.z = 0.0f;
@@ -644,3 +645,50 @@ float CFeature::RemainingEnergy() const
 {
 	return RemainingResource(def->energy);
 }
+
+void CFeature::QueBlock(bool delay) {
+	if (delay) {
+		delayOps.push_back(DelayOp(BLOCK));
+		featureHandler->SetFeatureUpdateable(this);
+	} else {
+		Block();
+	}
+}
+void CFeature::QueUnBlock(bool delay) {
+	if (delay) {
+		delayOps.push_back(DelayOp(UNBLOCK));
+		featureHandler->SetFeatureUpdateable(this);
+	} else {
+		UnBlock();
+	}
+}
+
+void CFeature::ExecuteDelayOps() {
+	while (!delayOps.empty()) {
+		const DelayOp d = delayOps.front(); // NOTE: No reference here since any of the calls below may add new delay ops at the end of the deque
+		switch (d.type) {
+			case BLOCK:
+				QueBlock(false);
+				break;
+			case UNBLOCK:
+				QueUnBlock(false);
+				break;
+			default:
+				LOG_L(L_ERROR, "Unknown delay operation: %d", d.type);
+		}
+		delayOps.pop_front();
+	}
+}
+
+#if STABLE_UPDATE
+void CFeature::StableSlowUpdate() {
+	stableReachedFinalPos = reachedFinalPos;
+	CSolidObject::StableSlowUpdate();
+}
+
+void CFeature::StableUpdate(bool slow) {
+	if (slow)
+		StableSlowUpdate();
+	CSolidObject::StableUpdate(slow);
+}
+#endif

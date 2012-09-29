@@ -52,6 +52,9 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/MoveTypes/MoveTypeFactory.h"
+#include "Sim/MoveTypes/MoveMath/MoveMath.h"
+#include "Sim/MoveTypes/AAirMoveType.h"
+#include "Sim/MoveTypes/ClassicGroundMoveType.h"
 #include "Sim/MoveTypes/ScriptMoveType.h"
 #include "Sim/Projectiles/FlareProjectile.h"
 #include "Sim/Projectiles/WeaponProjectiles/MissileProjectile.h"
@@ -285,7 +288,7 @@ CUnit::~CUnit()
 
 	// not all unit deletions run through KillUnit(),
 	// but we always want to call this for ourselves
-	UnBlock();
+	QueUnBlock();
 
 	// Remove us from our group, if we were in one
 	SetGroup(NULL);
@@ -486,7 +489,7 @@ void CUnit::PostInit(const CUnit* builder)
 	blocking &= !(immobile && unitDef->canKamikaze);
 
 	if (blocking) {
-		Block();
+		QueBlock();
 	}
 
 	if (unitDef->windGenerator > 0.0f) {
@@ -539,6 +542,7 @@ void CUnit::PostInit(const CUnit* builder)
 		// skip past the gradual build-progression
 		FinishedBuilding(true);
 	}
+	StableUpdate(true);
 }
 
 
@@ -547,7 +551,7 @@ void CUnit::PostInit(const CUnit* builder)
 void CUnit::ForcedMove(const float3& newPos, bool)
 {
 	if (blocking) {
-		UnBlock();
+		QueUnBlock();
 	}
 
 	Move3D(newPos - pos, true);
@@ -555,7 +559,7 @@ void CUnit::ForcedMove(const float3& newPos, bool)
 	eventHandler.UnitMoved(this);
 
 	if (blocking) {
-		Block();
+		QueBlock();
 	}
 
 	qf->MovedUnit(this);
@@ -636,6 +640,7 @@ void CUnit::EnableScriptMoveType()
 	}
 	prevMoveType = moveType;
 	moveType = new CScriptMoveType(this);
+	moveType->StableUpdate(true);
 	usingScriptMoveType = true;
 }
 
@@ -1902,7 +1907,7 @@ void CUnit::FinishedBuilding(bool postInit)
 			f->blockHeightChanges = true;
 		}
 
-		UnBlock();
+		QueUnBlock();
 		KillUnit(false, true, NULL);
 	}
 }
@@ -1910,6 +1915,7 @@ void CUnit::FinishedBuilding(bool postInit)
 
 void CUnit::KillUnit(bool selfDestruct, bool reclaimed, CUnit* attacker, bool showDeathSequence)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	if (isDead) { return; }
 	if (crashing && !beingBuilt) { return; }
 
@@ -2248,6 +2254,388 @@ void CUnit::ScriptDecloak(bool updateCloakTimeOut)
 		}
 	}
 }
+
+
+void CUnit::QueScriptStopMoving(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(SCRIPT_STOPMOVING));
+	} else {
+		script->StopMoving();
+	}
+}
+void CUnit::QueScriptStartMoving(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(SCRIPT_STARTMOVING));
+	} else {
+		script->StartMoving();
+	}
+}
+void CUnit::QueScriptLanded(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(SCRIPT_LANDED));
+	} else {
+		script->Landed();
+	}
+}
+void CUnit::QueScriptMoveRate(int rate, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(SCRIPT_MOVERATE, rate));
+	} else {
+		script->MoveRate(rate);
+	}
+}
+void CUnit::QueCAISlowUpdate(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(CAI_SLOWUPDATE));
+	} else {
+		commandAI->SlowUpdate();
+	}
+}
+void CUnit::QueCAIStopMove(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(CAI_STOPMOVE));
+	} else {
+		commandAI->StopMove();
+	}
+}
+void CUnit::QueFail(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(FAIL));
+	} else {
+		eventHandler.UnitMoveFailed(this);
+		eoh->UnitMoveFailed(*this);
+	}
+}
+void CUnit::QueActivate(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(ACTIVATE));
+	} else {
+		Activate();
+	}
+}
+void CUnit::QueDeactivate(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(DEACTIVATE));
+	} else {
+		Deactivate();
+	}
+}
+void CUnit::QueBlock(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(BLOCK));
+	} else {
+		Block();
+	}
+}
+void CUnit::QueUnBlock(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(UNBLOCK));
+	} else {
+		UnBlock();
+	}
+}
+void CUnit::QueUnitUnitCollision(const CUnit *u, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(UNITUNIT_COLLISION, u));
+	} else {
+		eventHandler.UnitUnitCollision(this, u);
+	}
+}
+void CUnit::QueUnitFeatureCollision(const CSolidObject *f, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(UNITFEAT_COLLISION, f));
+	} else {
+		eventHandler.UnitFeatureCollision(this, static_cast<const CFeature *>(f));
+	}
+}
+void CUnit::QueBuggerOff(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(BUGGEROFF));
+	} else {
+		helper->BuggerOff(pos + frontdir * radius, radius, true, false, team, this);
+	}
+}
+void CUnit::QueKillUnit(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(KILLUNIT));
+	} else {
+		KillUnit(false, true, NULL, false);
+	}
+}
+void CUnit::QueMove(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(MOVE));
+	} else {
+		eventHandler.UnitMoved(this);
+	}
+}
+void CUnit::QueUnreservePad(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(UNRESERVEPAD));
+	} else {
+		moveType->UnreservePad(moveType->GetReservedPad());
+	}
+}
+void CUnit::QueCheckNotify(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(CHECKNOTIFY));
+	} else {
+		static_cast<CScriptMoveType *>(moveType)->CheckNotify();
+	}
+}
+void CUnit::QueMoveFeature(CSolidObject *o, const float3& vec, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(MOVE_FEATURE, o, vec));
+	} else {
+		CFeature *f = static_cast<CFeature *>(o);
+		qf->RemoveFeature(f);
+		f->Move3D(vec, true);
+		qf->AddFeature(f);
+	}
+}
+
+void CUnit::QueMoveUnit(CSolidObject *o, const float3& vec, bool rel, bool terrcheck, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(MOVE_UNIT, o, vec, rel, terrcheck));
+	} else {
+		#define IMPASSABLE(md, mm, pos, u)                                         \
+			(((mm->IsBlocked(*md, pos, u) & CMoveMath::BLOCK_STRUCTURE) != 0) ||   \
+			 ((mm->GetPosSpeedMod(*md, pos) <= 0.01f)))
+				const CUnit *u = static_cast<const CUnit *>(o);
+		if (!terrcheck || !IMPASSABLE(u->moveDef, u->moveDef->moveMath, rel ? u->pos + vec : vec, u))
+			o->Move3D(vec, rel);
+	}
+}
+
+void CUnit::QueDoDamage(CSolidObject *o, float damage, const float3& impulse, int d, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(DODAMAGE, o, damage, impulse, d));
+	} else {
+		o->DoDamage(DamageArray(damage), -impulse, NULL, d);
+	}
+}
+
+void CUnit::QueChangeSpeed(CSolidObject *o, const float3& add, float mult, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(CHANGE_SPEED, o, add, mult));
+	} else {
+		o->speed += add;
+		o->speed *= mult;
+	}
+}
+
+void CUnit::QueKill(CSolidObject *o, const float3& impulse, bool crush, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(KILL, o, crush, impulse));
+	} else {
+		o->Kill(impulse, crush);
+	}
+}
+
+void CUnit::QueSetSkidding(CSolidObject *o, bool bset, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(SET_SKIDDING, o, bset));
+	} else {
+		CClassicGroundMoveType* mt = dynamic_cast<CClassicGroundMoveType*>(static_cast<CUnit *>(o)->moveType);
+		if (mt != NULL)
+			mt->skidding = bset;
+	}
+}
+
+void CUnit::QueUpdateMidAndAimPos(CSolidObject *o, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(UPDATE_MIDAIMPOS, o));
+	} else {
+		o->UpdateMidAndAimPos();
+	}
+}
+
+void CUnit::QueAddBuildPower(float amount, CSolidObject *o, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(ADDBUILDPOWER, amount, o));
+	} else {
+		o->AddBuildPower(amount, static_cast<CUnit *>(o));
+	}
+}
+
+void CUnit::QueGetAirBasePiecePos(CSolidObject *o, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(GETAIRBASEPIECEPOS, o));
+	} else {
+		AAirMoveType* mt = dynamic_cast<AAirMoveType*>(moveType);
+		CAirBaseHandler::LandingPad* lp = mt->GetReservedPad();
+		if (lp != NULL) {
+			mt->airBasePiecePos = lp->GetUnit()->script->GetPiecePos(lp->GetPiece());
+		}
+	}
+}
+
+void CUnit::QueMoveUnitOldPos(CSolidObject *o, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(MOVE_UNIT_OLDPOS, o));
+	} else {
+		CUnit* u = static_cast<CUnit *>(o);
+		u->Move3D(u->moveType->oldPos, false);
+	}
+}
+
+int CUnit::ExecuteDelayOps() {
+	int ret = 0;
+	while (!delayOps.empty()) {
+		const DelayOp d = delayOps.front(); // NOTE: No reference here since any of the calls below may add new delay ops at the end of the deque
+		switch (d.type) {
+			case SCRIPT_STOPMOVING:
+				QueScriptStopMoving(false);
+				break;
+			case SCRIPT_STARTMOVING:
+				QueScriptStartMoving(false);
+				break;
+			case SCRIPT_LANDED:
+				QueScriptLanded(false);
+				break;
+			case SCRIPT_MOVERATE:
+				QueScriptMoveRate(d.data, false);
+				break;
+			case CAI_SLOWUPDATE:
+				QueCAISlowUpdate(false);
+				break;
+			case CAI_STOPMOVE:
+				QueCAIStopMove(false);
+				break;
+			case FAIL:
+				QueFail(false);
+				break;
+			case ACTIVATE:
+				QueActivate(false);
+				break;
+			case DEACTIVATE:
+				QueDeactivate(false);
+				break;
+			case BLOCK:
+				ret = 1;
+				break;
+			case UNBLOCK:
+				ret = -1;
+				break;
+			case UNITUNIT_COLLISION:
+				QueUnitUnitCollision(static_cast<const CUnit *>(d.obj), false);
+				break;
+			case UNITFEAT_COLLISION:
+				QueUnitFeatureCollision(static_cast<const CFeature *>(d.obj), false);
+				break;
+			case BUGGEROFF:
+				QueBuggerOff(false);
+				break;
+			case KILLUNIT:
+				QueKillUnit(false);
+				break;
+			case MOVE:
+				QueMove(false);
+				break;
+			case UNRESERVEPAD:
+				QueUnreservePad(false);
+				break;
+			case CHECKNOTIFY:
+				QueCheckNotify(false);
+				break;
+			case MOVE_FEATURE:
+				QueMoveFeature(const_cast<CSolidObject *>(d.obj), d.vec, false);
+				break;
+			case MOVE_UNIT:
+				QueMoveUnit(const_cast<CSolidObject *>(d.obj), d.vec, d.relative, d.terrcheck, false);
+				break;
+			case DODAMAGE:
+				QueDoDamage(const_cast<CSolidObject *>(d.obj), d.damage, d.vec, d.dmgtype, false);
+				break;
+			case CHANGE_SPEED:
+				QueChangeSpeed(const_cast<CSolidObject *>(d.obj), d.vec, d.mult, false);
+				break;
+			case KILL:
+				QueKill(const_cast<CSolidObject *>(d.obj), d.vec, d.crush, false);
+				break;
+			case SET_SKIDDING:
+				QueSetSkidding(const_cast<CSolidObject *>(d.obj), d.bset, false);
+				break;
+			case UPDATE_MIDAIMPOS:
+				QueUpdateMidAndAimPos(const_cast<CSolidObject *>(d.obj), false);
+				break;
+			case ADDBUILDPOWER:
+				QueAddBuildPower(d.amount, const_cast<CSolidObject *>(d.obj), false);
+				break;
+			case GETAIRBASEPIECEPOS:
+				QueGetAirBasePiecePos(const_cast<CSolidObject *>(d.obj), false);
+				break;
+			case MOVE_UNIT_OLDPOS:
+				QueMoveUnitOldPos(const_cast<CSolidObject *>(d.obj), false);
+				break;
+			default:
+				LOG_L(L_ERROR, "Unknown delay operation: %d", d.type);
+		}
+		delayOps.pop_front();
+	}
+	if (ret > 0) {
+		if (!isMarkedOnBlockingMap || !blocking)
+			return ret;
+		int2& mP = GetMapPos();
+		if (mP.x != mapPos.x || mP.y != mapPos.y)
+			return ret;
+		return 0;
+	} else if (ret < 0) {
+		if (!isMarkedOnBlockingMap)
+			return 0;
+		return ret;
+	}
+	return ret;
+}
+
+#if STABLE_UPDATE
+void CUnit::StableSlowUpdate() {
+	stableBlockEnemyPushing = blockEnemyPushing;
+	stableBeingBuilt = beingBuilt;
+	stableStunned = stunned;
+	CSolidObject::StableSlowUpdate();
+	if (moveType)
+		moveType->StableSlowUpdate();
+}
+
+void CUnit::StableUpdate(bool slow) {
+	if (slow)
+		StableSlowUpdate();
+	stableIsDead = isDead; // PROBLEM
+	stableTransporter = transporter; // PROBLEM
+	CSolidObject::StableUpdate(slow);
+	if (moveType)
+		moveType->StableUpdate(slow);
+}
+#endif
 
 CR_BIND_DERIVED(CUnit, CSolidObject, );
 CR_REG_METADATA(CUnit, (

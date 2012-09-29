@@ -88,6 +88,10 @@ void QTPFS::PathCache::AddLivePath(IPath* path) {
 	livePaths.insert(std::make_pair<unsigned int, IPath*>(path->GetID(), path));
 }
 
+void QTPFS::PathCache::Merge() {
+	// MT PROBLEM FIXME
+}
+
 void QTPFS::PathCache::DelPath(unsigned int pathID) {
 	// if pathID is in xPaths, then yPaths and zPaths are guaranteed not
 	// to contain it (*only* exception is that deadPaths briefly overlaps

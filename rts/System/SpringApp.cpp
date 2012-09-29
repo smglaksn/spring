@@ -1069,7 +1069,7 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 {
 	switch (event.type) {
 		case SDL_VIDEORESIZE: {
-			GML_MSTMUTEX_LOCK(sim); // MainEventHandler
+			GML_MSTMUTEX_LOCK(sim, -1); // MainEventHandler
 
 			Watchdog::ClearTimer(WDT_MAIN, true);
 			globalRendering->viewSizeX = event.resize.w;
@@ -1085,7 +1085,7 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 			break;
 		}
 		case SDL_VIDEOEXPOSE: {
-			GML_MSTMUTEX_LOCK(sim); // MainEventHandler
+			GML_MSTMUTEX_LOCK(sim, -1); // MainEventHandler
 
 			Watchdog::ClearTimer(WDT_MAIN, true);
 			// re-initialize the stencil

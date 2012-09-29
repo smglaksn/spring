@@ -803,6 +803,7 @@
     <ClInclude Include="..\..\System\Object.h" />
     <ClInclude Include="..\..\System\OffscreenGLContext.h" />
     <ClInclude Include="..\..\System\Option.h" />
+    <ClInclude Include="..\..\System\Platform\ThreadingConfig.h" />
     <ClInclude Include="..\..\System\resource.h" />
     <ClInclude Include="..\..\System\SafeCStrings.h" />
     <ClInclude Include="..\..\System\SafeVector.h" />

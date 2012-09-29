@@ -187,6 +187,7 @@ CGroundMoveType::CGroundMoveType(CUnit* owner):
 
 CGroundMoveType::~CGroundMoveType()
 {
+	ASSERT_SINGLETHREADED_SIM();
 	if (pathId != 0) {
 		pathManager->DeletePath(pathId);
 	}
@@ -235,7 +236,7 @@ bool CGroundMoveType::Update()
 	const short heading = owner->heading;
 
 	if (owner->IsStunned() || owner->beingBuilt) {
-		owner->script->StopMoving();
+		owner->QueScriptStopMoving();
 		ChangeSpeed(0.0f, false);
 	} else {
 		if (owner->fpsControlPlayer != NULL) {
@@ -311,6 +312,12 @@ bool CGroundMoveType::Update()
 
 void CGroundMoveType::SlowUpdate()
 {
+	ASSERT_SINGLETHREADED_SIM();
+
+	if (pathId > 0 && pathManager->IsFailPath(pathId)) {
+		pathManager->DeletePath(pathId);
+		pathId = 0;
+	}
 	if (owner->GetTransporter() != NULL) {
 		if (progressState == Active)
 			StopEngine();
@@ -663,7 +670,7 @@ void CGroundMoveType::ImpulseAdded(const float3&)
 	owner->physicalState = CSolidObject::Flying;
 
 	if (speed.dot(groundNormal) > 0.2f) {
-		skidRotAccel = (gs->randFloat() - 0.5f) * 0.04f;
+		skidRotAccel = (gs->randFloat(owner) - 0.5f) * 0.04f;
 		flying = true;
 	}
 
@@ -819,7 +826,7 @@ void CGroundMoveType::UpdateControlledDrop()
 	if (wh > pos.y) {
 		// ground impact
 		owner->Move1D(wh, 1, (owner->falling = false));
-		owner->script->Landed(); //stop parachute animation
+		owner->QueScriptLanded(); //stop parachute animation
 	}
 }
 
@@ -833,29 +840,26 @@ void CGroundMoveType::CheckCollisionSkid()
 	//     derived from o->pos (!)
 	const float3& pos = collider->pos;
 	const UnitDef* colliderUD = collider->unitDef;
-	const vector<CUnit*>& nearUnits = qf->GetUnitsExact(pos, collider->radius);
-	const vector<CFeature*>& nearFeatures = qf->GetFeaturesExact(pos, collider->radius);
+	const std::map<boost::int64_t, CUnit*>& nearUnits = qf->GetUnitsExactStable(pos, collider->radius);
+	const std::map<boost::int64_t, CFeature*>& nearFeatures = qf->GetFeaturesExactStable(pos, collider->radius);
 
 	// magic number to reduce damage taken from collisions
 	// between a very heavy and a very light CSolidObject
 	static const float MASS_MULT = 0.02f;
 
-	vector<CUnit*>::const_iterator ui;
-	vector<CFeature*>::const_iterator fi;
-
-	for (ui = nearUnits.begin(); ui != nearUnits.end(); ++ui) {
-		CUnit* collidee = *ui;
+	for (std::map<boost::int64_t, CUnit*>::const_iterator ui = nearUnits.begin(); ui != nearUnits.end(); ++ui) {
+		CUnit* collidee = ui->second;
 		const UnitDef* collideeUD = collider->unitDef;
 
-		const float sqDist = (pos - collidee->pos).SqLength();
-		const float totRad = collider->radius + collidee->radius;
+		const float sqDist = (pos - collidee->StablePos()).SqLength();
+		const float totRad = collider->radius + collidee->StableRadius();
 
 		if ((sqDist >= totRad * totRad) || (sqDist <= 0.01f)) {
 			continue;
 		}
 
 		// stop units from reaching escape velocity
-		const float3 dif = (pos - collidee->pos).SafeNormalize();
+		const float3 dif = (pos - collidee->StablePos()).SafeNormalize();
 
 		if (collidee->moveDef == NULL) {
 			const float impactSpeed = -collider->speed.dot(dif);
@@ -876,14 +880,14 @@ void CGroundMoveType::CheckCollisionSkid()
 			}
 			// damage the (static) collidee based on collider's mass, no added impulse
 			if (doCollideeDamage) {
-				collidee->DoDamage(DamageArray(impactDamageMult), ZeroVector, NULL, -CSolidObject::DAMAGE_COLLISION_OBJECT);
+				collider->QueDoDamage(collidee, impactDamageMult, ZeroVector, -CSolidObject::DAMAGE_COLLISION_OBJECT);
 			}
 		} else {
 			// don't conserve momentum
-			assert(collider->mass > 0.0f && collidee->mass > 0.0f);
+			assert(collider->mass > 0.0f && collidee->StableMass() > 0.0f);
 
-			const float impactSpeed = (collidee->speed - collider->speed).dot(dif) * 0.5f;
-			const float colliderRelMass = (collider->mass / (collider->mass + collidee->mass));
+			const float impactSpeed = (collidee->StableSpeed() - collider->speed).dot(dif) * 0.5f;
+			const float colliderRelMass = (collider->mass / (collider->mass + collidee->StableMass()));
 			const float colliderRelImpactSpeed = impactSpeed * (1.0f - colliderRelMass);
 			const float collideeRelImpactSpeed = impactSpeed * (       colliderRelMass); 
 
@@ -899,7 +903,7 @@ void CGroundMoveType::CheckCollisionSkid()
 				continue;
 
 			collider->Move3D(colliderImpactImpulse, true);
-			collidee->Move3D(-collideeImpactImpulse, true);
+			collider->QueMoveUnit(collidee, -collideeImpactImpulse, true, false);
 
 			// damage the collider
 			if (doColliderDamage) {
@@ -907,29 +911,28 @@ void CGroundMoveType::CheckCollisionSkid()
 			}
 			// damage the collidee
 			if (doCollideeDamage) {
-				collidee->DoDamage(DamageArray(collideeImpactDmgMult), dif * -collideeImpactDmgMult, NULL, -CSolidObject::DAMAGE_COLLISION_OBJECT);
+				collider->QueDoDamage(collidee, collideeImpactDmgMult, dif * -collideeImpactDmgMult, -CSolidObject::DAMAGE_COLLISION_OBJECT);
 			}
 
 			collider->speed += colliderImpactImpulse;
 			collider->speed *= 0.9f;
-			collidee->speed -= collideeImpactImpulse;
-			collidee->speed *= 0.9f;
+			collider->QueChangeSpeed(collidee, -collideeImpactImpulse, 0.9f);
 		}
 	}
 
-	for (fi = nearFeatures.begin(); fi != nearFeatures.end(); ++fi) {
-		CFeature* f = *fi;
+	for (std::map<boost::int64_t, CFeature*>::const_iterator fi = nearFeatures.begin(); fi != nearFeatures.end(); ++fi) {
+		CFeature* f = fi->second;
 
-		if (!f->blocking)
+		if (!f->StableBlocking())
 			continue;
 
-		const float sqDist = (pos - f->pos).SqLength();
-		const float totRad = collider->radius + f->radius;
+		const float sqDist = (pos - f->StablePos()).SqLength();
+		const float totRad = collider->radius + f->StableRadius();
 
 		if ((sqDist >= totRad * totRad) || (sqDist <= 0.01f))
 			continue;
 
-		const float3 dif = (pos - f->pos).SafeNormalize();
+		const float3 dif = (pos - f->StablePos()).SafeNormalize();
 		const float impactSpeed = -collider->speed.dot(dif);
 		const float impactDamageMult = std::min(impactSpeed * collider->mass * MASS_MULT, MAX_UNIT_SPEED);
 		const float3 impactImpulse = dif * impactSpeed;
@@ -947,7 +950,7 @@ void CGroundMoveType::CheckCollisionSkid()
 		}
 
 		// damage the collidee feature based on collider's mass
-		f->DoDamage(DamageArray(impactDamageMult), -impactImpulse, NULL, -CSolidObject::DAMAGE_COLLISION_OBJECT);
+		collider->QueDoDamage(f, impactDamageMult, -impactImpulse, -CSolidObject::DAMAGE_COLLISION_OBJECT);
 	}
 
 	ASSERT_SANE_OWNER_SPEED(collider->speed);
@@ -1022,10 +1025,10 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 	const float avoiderRadius = FOOTPRINT_RADIUS(avoiderMD->xsize, avoiderMD->zsize, 1.0f);
 	const float3 rightOfPath = desiredDir.cross(UpVector);
 
-	const vector<CSolidObject*>& nearbyObjects = qf->GetSolidsExact(avoider->pos, avoidanceRadius);
+	std::map<boost::int64_t, CSolidObject*> nearbyObjects = qf->GetSolidsExactStable(avoider->pos, avoidanceRadius);
 
-	for (vector<CSolidObject*>::const_iterator oi = nearbyObjects.begin(); oi != nearbyObjects.end(); ++oi) {
-		CSolidObject* avoidee = *oi;
+	for (std::map<boost::int64_t, CSolidObject*>::const_iterator oi = nearbyObjects.begin(); oi != nearbyObjects.end(); ++oi) {
+		CSolidObject* avoidee = oi->second;
 		MoveDef* avoideeMD = avoidee->moveDef;
 
 		// cases in which there is no need to avoid this obstacle
@@ -1036,21 +1039,21 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 		if (!avoiderMM->CrushResistant(*avoiderMD, avoidee))
 			continue;
 		// ignore objects that are slightly behind us
-		if (desiredDir.dot(avoidee->pos - avoider->pos) <= 0.0f)
+		if (desiredDir.dot(avoidee->StablePos() - avoider->pos) <= 0.0f)
 			continue;
 
 		const bool avoideeMobile = (avoideeMD != NULL);
 
-		const float3 avoideeVector = (avoider->pos + avoider->speed) - (avoidee->pos + avoidee->speed);
+		const float3 avoideeVector = (avoider->pos + avoider->speed) - (avoidee->StablePos() + avoidee->StableSpeed());
 
 		// use the avoidee's MoveDef footprint as radius if it is mobile
 		// use the avoidee's Unit (not UnitDef) footprint as radius otherwise
 		const float avoideeRadius = avoideeMobile?
 			FOOTPRINT_RADIUS(avoideeMD->xsize, avoideeMD->zsize, 1.0f):
-			FOOTPRINT_RADIUS(avoidee  ->xsize, avoidee  ->zsize, 1.0f);
+			FOOTPRINT_RADIUS(avoidee->StableXSize(), avoidee->StableZSize(), 1.0f);
 		const float avoidanceRadiusSum = avoiderRadius + avoideeRadius;
-		const float avoidanceMassSum = avoider->mass + avoidee->mass;
-		const float avoideeMassScale = (avoideeMobile)? (avoidee->mass / avoidanceMassSum): 1.0f;
+		const float avoidanceMassSum = avoider->mass + avoidee->StableMass();
+		const float avoideeMassScale = (avoideeMobile)? (avoidee->StableMass() / avoidanceMassSum): 1.0f;
 		const float avoideeDistSq = avoideeVector.SqLength();
 
 		// TODO: also check if !avoiderUD->pushResistant
@@ -1070,7 +1073,7 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 		// do not bother steering around idling objects
 		// (collision handling will push them aside, or
 		// us in case of "allied" features)
-		if (!avoidee->isMoving && avoidee->allyteam == avoider->allyteam)
+		if (!avoidee->StableIsMoving() && avoidee->allyteam == avoider->allyteam) // MT STABLE?
 			continue;
 
 		// if object and unit in relative motion are closing in on one another
@@ -1081,13 +1084,13 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 			GML_RECMUTEX_LOCK(sel); // GetObstacleAvoidanceDir
 
 			if (selectedUnits.selectedUnits.find(owner) != selectedUnits.selectedUnits.end()) {
-				geometricObjects->AddLine(avoider->pos + (UpVector * 20.0f), avoidee->pos + (UpVector * 20.0f), 3, 1, 4);
+				geometricObjects->AddLine(avoider->pos + (UpVector * 20.0f), avoidee->StablePos() + (UpVector * 20.0f), 3, 1, 4);
 			}
 		}
 		#endif
 
-		const float avoidanceTurnSign = ((avoidee->pos.dot(avoider->rightdir) - avoider->pos.dot(avoider->rightdir)) <= 0.0f) * 2.0f - 1.0f;
-		const float avoidanceClampDot = (1.0f - Clamp(avoider->frontdir.dot(avoidee->frontdir), -1.0f, 1.0f)) * 0.5f + 0.1f;
+		const float avoidanceTurnSign = ((avoidee->StablePos().dot(avoider->rightdir) - avoider->pos.dot(avoider->rightdir)) <= 0.0f) * 2.0f - 1.0f;
+		const float avoidanceClampDot = (1.0f - Clamp(avoider->frontdir.dot(avoidee->StableFrontDir()), -1.0f, 1.0f)) * 0.5f + 0.1f;
 		const float avoidanceFallOff  = (1.0f - std::min(1.0f, fastmath::sqrt2(avoideeDistSq) / (4.0f * avoidanceRadiusSum)));
 
 		avoidanceDir = avoider->rightdir * AVOIDER_DIR_WEIGHT * avoidanceTurnSign;
@@ -1123,40 +1126,6 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 }
 
 
-
-// Calculates an aproximation of the physical 2D-distance between given two objects.
-float CGroundMoveType::Distance2D(CSolidObject* object1, CSolidObject* object2, float marginal)
-{
-	// calculate the distance in (x,z) depending
-	// on the shape of the object footprints
-	float dist2D;
-	if (object1->xsize == object1->zsize || object2->xsize == object2->zsize) {
-		// use xsize as a cylindrical radius.
-		float3 distVec = (object1->midPos - object2->midPos);
-		dist2D = distVec.Length2D() - (object1->xsize + object2->xsize) * SQUARE_SIZE / 2 + 2 * marginal;
-	} else {
-		// Pytagorean sum of the x and z distance.
-		float3 distVec;
-		const float xdiff = math::fabs(object1->midPos.x - object2->midPos.x);
-		const float zdiff = math::fabs(object1->midPos.z - object2->midPos.z);
-
-		distVec.x = xdiff - (object1->xsize + object2->xsize) * SQUARE_SIZE / 2 + 2 * marginal;
-		distVec.z = zdiff - (object1->zsize + object2->zsize) * SQUARE_SIZE / 2 + 2 * marginal;
-
-		if (distVec.x > 0.0f && distVec.z > 0.0f) {
-			dist2D = distVec.Length2D();
-		} else if (distVec.x < 0.0f && distVec.z < 0.0f) {
-			dist2D = -distVec.Length2D();
-		} else if (distVec.x > 0.0f) {
-			dist2D = distVec.x;
-		} else {
-			dist2D = distVec.z;
-		}
-	}
-
-	return dist2D;
-}
-
 // Creates a path to the goal.
 void CGroundMoveType::GetNewPath()
 {
@@ -1171,8 +1140,8 @@ void CGroundMoveType::GetNewPath()
 		currWayPoint = pathManager->NextWayPoint(pathId,   owner->pos, 1.25f * SQUARE_SIZE, 0, owner);
 		nextWayPoint = pathManager->NextWayPoint(pathId, currWayPoint, 1.25f * SQUARE_SIZE, 0, owner);
 
-		pathController->SetRealGoalPosition(pathId, goalPos);
-		pathController->SetTempGoalPosition(pathId, currWayPoint);
+		pathController->SetRealGoalPosition(pathId, goalPos); // Note: has no effect, is not MT safe
+		pathController->SetTempGoalPosition(pathId, currWayPoint); // Note: has no effect, is not MT safe
 	} else {
 		Fail();
 	}
@@ -1271,7 +1240,7 @@ bool CGroundMoveType::CanGetNextWayPoint() {
 void CGroundMoveType::GetNextWayPoint()
 {
 	if (CanGetNextWayPoint()) {
-		pathController->SetTempGoalPosition(pathId, nextWayPoint);
+		pathController->SetTempGoalPosition(pathId, nextWayPoint); // Note: has no effect, is not MT safe
 
 		// NOTE: pathfinder implementation should ensure waypoints are not equal
 		currWayPoint = nextWayPoint;
@@ -1329,7 +1298,7 @@ void CGroundMoveType::StartEngine() {
 			pathManager->UpdatePath(owner, pathId);
 
 			owner->isMoving = true;
-			owner->script->StartMoving();
+			owner->QueScriptStartMoving();
 		}
 	}
 
@@ -1346,7 +1315,7 @@ void CGroundMoveType::StopEngine() {
 		}
 
 		// Stop animation.
-		owner->script->StopMoving();
+		owner->QueScriptStopMoving();
 
 		LOG_L(L_DEBUG, "StopEngine: engine stopped for unit %i", owner->id);
 	}
@@ -1373,7 +1342,7 @@ void CGroundMoveType::Arrived()
 
 		// and the action is done
 		progressState = Done;
-		owner->commandAI->SlowUpdate();
+		owner->QueCAISlowUpdate();
 
 		LOG_L(L_DEBUG, "Arrived: unit %i arrived", owner->id);
 	}
@@ -1393,8 +1362,7 @@ void CGroundMoveType::Fail()
 	// this action has failed to reach its goal.
 	progressState = Failed;
 
-	eventHandler.UnitMoveFailed(owner);
-	eoh->UnitMoveFailed(*owner);
+	owner->QueFail();
 }
 
 
@@ -1429,12 +1397,12 @@ void CGroundMoveType::HandleObjectCollisions()
 		HandleFeatureCollisions(collider, colliderSpeed, colliderRadius, sepDirMask, colliderUD, colliderMD, colliderMM);
 	}
 
-	collider->Block();
+	collider->QueBlock();
 }
 
 void CGroundMoveType::HandleStaticObjectCollisionYM(
 	CUnit* collider,
-	CSolidObject*,
+	CSolidObject* /*access restrictions due to MT*/,
 	const MoveDef* colliderMD,
 	const CMoveMath* colliderMM,
 	bool repath
@@ -1490,7 +1458,7 @@ void CGroundMoveType::HandleStaticObjectCollisionYM(
 
 void CGroundMoveType::HandleStaticObjectCollision(
 	CUnit* collider,
-	CSolidObject*,
+	CSolidObject* /*access restrictions due to MT*/,
 	const MoveDef* colliderMD,
 	const CMoveMath* colliderMM,
 	const float3& collisionImpulse,
@@ -1528,19 +1496,18 @@ void CGroundMoveType::HandleUnitCollisions(
 ) {
 	const float searchRadius = std::max(colliderSpeed, 1.0f) * (colliderRadius * 1.0f);
 
-	const std::vector<CUnit*>& nearUnits = qf->GetUnitsExact(collider->pos, searchRadius);
-	      std::vector<CUnit*>::const_iterator uit;
+	const std::map<boost::int64_t, CUnit*>& nearUnits = qf->GetUnitsExactStable(collider->pos, searchRadius);
 
 	// NOTE: probably too large for most units (eg. causes tree falling animations to be skipped)
 	const int dirSign = int(!reversing) * 2 - 1;
 	const float3 crushImpulse = collider->speed * collider->mass * dirSign;
 
-	for (uit = nearUnits.begin(); uit != nearUnits.end(); ++uit) {
-		CUnit* collidee = const_cast<CUnit*>(*uit);
+	for (std::map<boost::int64_t, CUnit*>::const_iterator uit = nearUnits.begin(); uit != nearUnits.end(); ++uit) {
+		CUnit* collidee = uit->second;
 
 		if (collidee == collider) { continue; }
-		if (collidee->moveType->IsSkidding()) { continue; }
-		if (collidee->moveType->IsFlying()) { continue; }
+		if (collidee->moveType->StableIsSkidding()) { continue; }
+		if (collidee->moveType->StableIsFlying()) { continue; }
 
 		const bool colliderMobile = (collider->moveDef != NULL); // always true
 		const bool collideeMobile = (collidee->moveDef != NULL); // maybe true
@@ -1551,12 +1518,12 @@ void CGroundMoveType::HandleUnitCollisions(
 
 		// use the collidee's MoveDef footprint as radius if it is mobile
 		// use the collidee's Unit (not UnitDef) footprint as radius otherwise
-		const float collideeSpeed = collidee->speed.Length();
+		const float collideeSpeed = collidee->StableSpeed().Length();
 		const float collideeRadius = collideeMobile?
 			FOOTPRINT_RADIUS(collideeMD->xsize, collideeMD->zsize, 0.75f):
-			FOOTPRINT_RADIUS(collidee  ->xsize, collidee  ->zsize, 0.75f);
+			FOOTPRINT_RADIUS(collidee->StableXSize(), collidee->StableZSize(), 0.75f);
 
-		const float3 separationVector   = collider->pos - collidee->pos;
+		const float3 separationVector   = collider->pos - collidee->StablePos();
 		const float separationMinDistSq = (colliderRadius + collideeRadius) * (colliderRadius + collideeRadius);
 
 		if ((separationVector.SqLength() - separationMinDistSq) > 0.01f)
@@ -1579,14 +1546,14 @@ void CGroundMoveType::HandleUnitCollisions(
 		// this is NOT enforced
 		const bool alliedCollision =
 			teamHandler->Ally(collider->allyteam, collidee->allyteam) &&
-			teamHandler->Ally(collidee->allyteam, collider->allyteam);
-		const bool collideeYields = (collider->isMoving && !collidee->isMoving);
+			teamHandler->Ally(collidee->allyteam, collider->allyteam); // MT STABLE?
+		const bool collideeYields = (collider->isMoving && !collidee->StableIsMoving());
 		const bool ignoreCollidee = ((collideeYields && alliedCollision) || colliderUD->pushResistant);
 
 		pushCollider &= (alliedCollision || modInfo.allowPushingEnemyUnits || !collider->blockEnemyPushing);
-		pushCollidee &= (alliedCollision || modInfo.allowPushingEnemyUnits || !collidee->blockEnemyPushing);
-		pushCollider &= (!collider->beingBuilt && !collidee->usingScriptMoveType);
-		pushCollidee &= (!collidee->beingBuilt && !collider->usingScriptMoveType);
+		pushCollidee &= (alliedCollision || modInfo.allowPushingEnemyUnits || !collidee->StableBlockEnemyPushing());
+		pushCollider &= (!collider->beingBuilt && !collidee->StableUsingScriptMoveType());
+		pushCollidee &= (!collidee->StableBeingBuilt() && !collider->usingScriptMoveType);
 
 		crushCollidee |= (!alliedCollision || modInfo.allowCrushingAlliedUnits);
 		crushCollidee &= (collider->speed != ZeroVector);
@@ -1599,11 +1566,12 @@ void CGroundMoveType::HandleUnitCollisions(
 
 		if (crushCollidee && !colliderMM->CrushResistant(*colliderMD, collidee))
 			collidee->Kill(crushImpulse, true);
+			owner->QueKill(collidee, crushImpulse, true);
 
 		if (pathController->IgnoreCollision(collider, collidee))
 			continue;
 
-		eventHandler.UnitUnitCollision(collider, collidee);
+		owner->QueUnitUnitCollision(collidee);
 
 		if (!collideeMobile) {
 			// building (always axis-aligned, but possibly has a yardmap)
@@ -1617,14 +1585,14 @@ void CGroundMoveType::HandleUnitCollisions(
 			continue;
 		}
 
-		if (collider->moveType->goalPos == collidee->moveType->goalPos) {
+		if (collider->moveType->goalPos == collidee->moveType->StableGoalPos()) {
 			// NOTE: works, but should collision detection be doing this?
 			const float colliderGoalDistSq = (collider->moveType->goalPos - collider->pos).SqLength2D();
-			const float collideeGoalDistSq = (collidee->moveType->goalPos - collidee->pos).SqLength2D();
+			const float collideeGoalDistSq = (collidee->moveType->StableGoalPos() - collidee->StablePos()).SqLength2D();
 
 			// if both parties are nearing their shared goal, trigger
 			// Arrived if we are closest to kill long pushing contests
-			if (colliderGoalDistSq <= Square(collider->radius * 2.0f) && collideeGoalDistSq <= Square(collidee->radius * 2.0f)) {
+			if (colliderGoalDistSq <= Square(collider->radius * 2.0f) && collideeGoalDistSq <= Square(collidee->StableRadius() * 2.0f)) {
 				if (colliderGoalDistSq < collideeGoalDistSq) {
 					atEndOfPath = true; atGoal = true;
 				}
@@ -1646,11 +1614,11 @@ void CGroundMoveType::HandleUnitCollisions(
 
 		const float
 			m1 = collider->mass,
-			m2 = collidee->mass,
+			m2 = collidee->StableMass(),
 			v1 = std::max(1.0f, colliderSpeed),
 			v2 = std::max(1.0f, collideeSpeed),
 			c1 = 1.0f + (1.0f - math::fabs(collider->frontdir.dot(-sepDirection))) * 5.0f,
-			c2 = 1.0f + (1.0f - math::fabs(collidee->frontdir.dot( sepDirection))) * 5.0f,
+			c2 = 1.0f + (1.0f - math::fabs(collidee->StableFrontDir().dot( sepDirection))) * 5.0f,
 			s1 = m1 * v1 * c1,
 			s2 = m2 * v2 * c2,
  			r1 = s1 / (s1 + s2 + 1.0f),
@@ -1661,7 +1629,6 @@ void CGroundMoveType::HandleUnitCollisions(
 		const float collideeMassScale = Clamp(1.0f - r2, 0.01f, 0.99f) * (modInfo.allowUnitCollisionOverlap? (1.0f / collideeRelRadius): 1.0f);
 
 		const float3 colliderPushPos = collider->pos + (colResponseVec * colliderMassScale);
-		const float3 collideePushPos = collidee->pos - (colResponseVec * collideeMassScale);
 
 		#define IMPASSABLE(md, mm, pos, u)                                         \
 			(((mm->IsBlocked(*md, pos, u) & CMoveMath::BLOCK_STRUCTURE) != 0) ||   \
@@ -1689,28 +1656,28 @@ void CGroundMoveType::HandleUnitCollisions(
 		}
 
 		if (pushCollidee) {
-			const bool collideePushPosLegal = !IMPASSABLE(collideeMD, collideeMM, collideePushPos, collidee);
 			const bool collideePushAllowed = (!collideeUD->pushResistant || colliderUD->pushResistant);
 
-			if (collideePushPosLegal && collideePushAllowed) {
-				collidee->Move3D(collideePushPos, false);
+			if (collideePushAllowed) {
+				collider->QueMoveUnit(collidee, -(colResponseVec * collideeMassScale), true, true); // performs impassable test
 			}
 		} else {
-			collidee->Move3D(collidee->moveType->oldPos, false);
+			collider->QueMoveUnitOldPos(collidee);
 		}
 
-		if (collider->isMoving && collidee->isMoving) {
+		if (collider->isMoving && collidee->StableIsMoving()) {
 			#define SIGN(v) ((int(v >= 0.0f) * 2) - 1)
 			// also push collider and collidee laterally in opposite directions
 			const int colliderSign = SIGN( separationVector.dot(collider->rightdir));
-			const int collideeSign = SIGN(-separationVector.dot(collidee->rightdir));
+			const int collideeSign = SIGN(-separationVector.dot(collidee->StableRightDir()));
 			const float3 colliderSlideVec = collider->rightdir * colliderSign * (1.0f / penDistance);
-			const float3 collideeSlideVec = collidee->rightdir * collideeSign * (1.0f / penDistance);
+			const float3 collideeSlideVec = collidee->StableRightDir() * collideeSign * (1.0f / penDistance);
 			const bool colliderSlidePosLegal = !IMPASSABLE(colliderMD, colliderMM, collider->pos + colliderSlideVec * r2, collider);
-			const bool collideeSlidePosLegal = !IMPASSABLE(colliderMD, colliderMM, collidee->pos + collideeSlideVec * r1, collider);
 
 			if (pushCollider && colliderSlidePosLegal) { collider->Move3D(colliderSlideVec * r2, true); }
-			if (pushCollidee && collideeSlidePosLegal) { collidee->Move3D(collideeSlideVec * r1, true); }
+			if (pushCollidee) {
+				collider->QueMoveUnit(collidee, collideeSlideVec * r1, true, true); // performs impassable test
+			}
 			#undef SIGN
 		}
 
@@ -1729,21 +1696,20 @@ void CGroundMoveType::HandleFeatureCollisions(
 ) {
 	const float searchRadius = std::max(colliderSpeed, 1.0f) * (colliderRadius * 1.0f);
 
-	const std::vector<CFeature*>& nearFeatures = qf->GetFeaturesExact(collider->pos, searchRadius);
-	      std::vector<CFeature*>::const_iterator fit;
+	const std::map<boost::int64_t, CFeature*>& nearFeatures = qf->GetFeaturesExactStable(collider->pos, searchRadius);
 
 	const int dirSign = int(!reversing) * 2 - 1;
 	const float3 crushImpulse = collider->speed * collider->mass * dirSign;
 
-	for (fit = nearFeatures.begin(); fit != nearFeatures.end(); ++fit) {
-		CFeature* collidee = const_cast<CFeature*>(*fit);
+	for (std::map<boost::int64_t, CFeature*>::const_iterator fit = nearFeatures.begin(); fit != nearFeatures.end(); ++fit) {
+		CFeature* collidee = fit->second;
 		// const FeatureDef* collideeFD = collidee->def;
 
 		// use the collidee's Feature (not FeatureDef) footprint as radius
 		// const float collideeRadius = FOOTPRINT_RADIUS(collideeFD->xsize, collideeFD->zsize, 0.75f);
-		const float collideeRadius = FOOTPRINT_RADIUS(collidee->xsize, collidee->zsize, 0.75f);
+		const float collideeRadius = FOOTPRINT_RADIUS(collidee->StableXSize(), collidee->StableZSize(), 0.75f);
 
-		const float3 separationVector   = collider->pos - collidee->pos;
+		const float3 separationVector   = collider->pos - collidee->StablePos();
 		const float separationMinDistSq = (colliderRadius + collideeRadius) * (colliderRadius + collideeRadius);
 
 		if ((separationVector.SqLength() - separationMinDistSq) > 0.01f)
@@ -1752,14 +1718,14 @@ void CGroundMoveType::HandleFeatureCollisions(
 		if (colliderMM->IsNonBlocking(*colliderMD, collidee, collider))
 			continue;
 		if (!colliderMM->CrushResistant(*colliderMD, collidee))
-			collidee->Kill(crushImpulse, true);
+			collider->QueKill(collidee, crushImpulse, true);
 
 		if (pathController->IgnoreCollision(collider, collidee))
 			continue;
 
-		eventHandler.UnitFeatureCollision(collider, collidee);
+		owner->QueUnitFeatureCollision(collidee);
 
-		if (collidee->reachedFinalPos) {
+		if (collidee->StableReachedFinalPos()) {
 			#define IMPULSE ((separationVector / (separationVector.Length() + 0.1f)) * sepDirMask)
 			HandleStaticObjectCollision(collider, collidee, colliderMD, colliderMM, IMPULSE, (gs->frameNum > pathRequestDelay));
 			#undef IMPULSE
@@ -1778,7 +1744,7 @@ void CGroundMoveType::HandleFeatureCollisions(
 		// collideeMassScale ~= 0.01 suppresses large responses)
 		const float
 			m1 = collider->mass,
-			m2 = collidee->mass * 10000.0f,
+			m2 = collidee->StableMass() * 10000.0f,
 			v1 = std::max(1.0f, colliderSpeed),
 			v2 = 1.0f,
 			c1 = (1.0f - math::fabs( collider->frontdir.dot(-sepDirection))) * 5.0f,
@@ -1791,10 +1757,8 @@ void CGroundMoveType::HandleFeatureCollisions(
 		const float colliderMassScale = Clamp(1.0f - r1, 0.01f, 0.99f);
 		const float collideeMassScale = Clamp(1.0f - r2, 0.01f, 0.99f);
 
-		qf->RemoveFeature(collidee);
 		collider->Move3D( colResponseVec * colliderMassScale, true);
-		collidee->Move3D(-colResponseVec * collideeMassScale, true);
-		qf->AddFeature(collidee);
+		collider->QueMoveFeature(collidee, -colResponseVec * collideeMassScale);
 	}
 }
 
@@ -2096,7 +2060,7 @@ void CGroundMoveType::SetMainHeading() {
 	if (progressState == Active) {
 		if (owner->heading == newHeading) {
 			// stop turning
-			owner->script->StopMoving();
+			owner->QueScriptStopMoving();
 			progressState = Done;
 		} else {
 			ChangeHeading(newHeading);
@@ -2106,7 +2070,7 @@ void CGroundMoveType::SetMainHeading() {
 			if (!frontWeapon->TryTarget(mainHeadingPos, true, 0)) {
 				// start moving
 				progressState = Active;
-				owner->script->StartMoving();
+				owner->QueScriptStartMoving();
 				ChangeHeading(newHeading);
 			}
 		}
@@ -2190,18 +2154,18 @@ bool CGroundMoveType::UpdateDirectControl()
 		ChangeSpeed(maxSpeed, wantReverse, true);
 
 		owner->isMoving = true;
-		owner->script->StartMoving();
+		owner->QueScriptStartMoving();
 	} else if (unitCon.back) {
 		ChangeSpeed(maxReverseSpeed, wantReverse, true);
 
 		owner->isMoving = true;
-		owner->script->StartMoving();
+		owner->QueScriptStartMoving();
 	} else {
 		// not moving forward or backward, stop
 		ChangeSpeed(0.0f, false, true);
 
 		owner->isMoving = false;
-		owner->script->StopMoving();
+		owner->QueScriptStopMoving();
 	}
 
 	if (unitCon.left ) { ChangeHeading(owner->heading + turnRate); turnSign =  1.0f; }

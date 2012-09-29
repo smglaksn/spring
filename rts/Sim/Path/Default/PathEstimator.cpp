@@ -110,6 +110,11 @@ CPathEstimator::~CPathEstimator()
 }
 
 
+void CPathEstimator::MergePathCache() {
+	pathCache->Merge();
+}
+
+
 void CPathEstimator::InitEstimator(const std::string& cacheFileName, const std::string& map)
 {
 	const unsigned int numThreads = GetNumThreads();
@@ -461,6 +466,7 @@ IPath::SearchResult CPathEstimator::GetPath(
 	const CPathFinderDef& peDef,
 	IPath::Path& path,
 	unsigned int maxSearchedBlocks,
+	const CSolidObject *owner,
 	bool synced
 ) {
 	start.ClampInBounds();
@@ -497,7 +503,7 @@ IPath::SearchResult CPathEstimator::GetPath(
 
 		if (synced && result == IPath::Ok) {
 			// add succesful paths to the cache (NOTE: only when in synced context)
-			pathCache->AddPath(&path, result, startBlock, goalBlock, peDef.sqGoalRadius, moveDef.pathType);
+			pathCache->AddPath(&path, result, startBlock, goalBlock, peDef.sqGoalRadius, moveDef.pathType, owner);
 		}
 
 		if (LOG_IS_ENABLED(L_DEBUG)) {

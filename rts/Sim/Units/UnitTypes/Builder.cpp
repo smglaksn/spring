@@ -371,7 +371,7 @@ void CBuilder::Update()
 						}
 						if (curResurrect->resurrectProgress > 1) {
 							// resurrect finished
-							curResurrect->UnBlock();
+							curResurrect->QueUnBlock();
 							CUnit* u = unitLoader->LoadUnit(ud, curResurrect->pos,
 														team, false, curResurrect->buildFacing, this);
 

@@ -349,6 +349,7 @@ CGame::~CGame()
 #endif
 
 	ENTER_SYNCED_CODE();
+	IPathManager::ScopedDisableThreading sdt;
 
 	// Kill all teams that are still alive, in
 	// case the game did not do so through Lua.
@@ -1116,7 +1117,7 @@ bool CGame::Draw() {
 		// return early if and only if less than 30K milliseconds have passed since last draw-frame
 		// so we force render two frames per minute when minimized to clear batches and free memory
 		// don't need to mess with globalRendering->active since only mouse-input code depends on it
-		if (spring_time(currentTimePreDraw - lastDrawFrameTime) < 30*1000)
+		if (spring_time(currentTimePreDraw - lastDrawFrameTime) < spring_time(30*1000))
 			return true;
 	}
 

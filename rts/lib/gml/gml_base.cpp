@@ -77,7 +77,7 @@ static void gmlSimLoop(void*)
 namespace GML {
 
 	bool UpdateSim(CGameController *ac) {
-		GML_MSTMUTEX_LOCK(sim); // UpdateSim
+		GML_MSTMUTEX_LOCK(sim, 1); // UpdateSim
 
 		Threading::SetSimThread(true);
 		bool ret = ac->Update();

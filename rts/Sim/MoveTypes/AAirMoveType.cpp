@@ -24,6 +24,7 @@ CR_REG_METADATA(AAirMoveType, (
 	CR_MEMBER(collide),
 	CR_MEMBER(useSmoothMesh),
 	CR_MEMBER(autoLand),
+	CR_MEMBER(airBasePiecePos),
 
 	CR_MEMBER(lastColWarning),
 	CR_MEMBER(reservedPad),
@@ -48,6 +49,7 @@ AAirMoveType::AAirMoveType(CUnit* unit):
 	collide(true),
 	useSmoothMesh(false),
 	autoLand(true),
+	airBasePiecePos(ZeroVector),
 
 	lastColWarning(NULL),
 	reservedPad(NULL),
@@ -80,6 +82,8 @@ bool AAirMoveType::UseSmoothMesh() const {
 
 
 void AAirMoveType::ReservePad(CAirBaseHandler::LandingPad* lp) {
+	ASSERT_SINGLETHREADED_SIM();
+
 	oldGoalPos = goalPos;
 	orgWantedHeight = wantedHeight;
 
@@ -94,8 +98,9 @@ void AAirMoveType::ReservePad(CAirBaseHandler::LandingPad* lp) {
 	Takeoff();
 }
 
-void AAirMoveType::UnreservePad(CAirBaseHandler::LandingPad* lp)
-{
+void AAirMoveType::UnreservePad(CAirBaseHandler::LandingPad* lp) {
+	ASSERT_SINGLETHREADED_SIM();
+
 	if (lp == NULL)
 		return;
 
@@ -203,7 +208,7 @@ void AAirMoveType::CheckForCollision()
 	const SyncedFloat3& forward = owner->frontdir;
 
 	const float3 midTestPos = pos + forward * 121.0f;
-	const std::vector<CUnit*>& others = qf->GetUnitsExact(midTestPos, 115.0f);
+	const std::map<boost::int64_t, CUnit*>& others = qf->GetUnitsExactStable(midTestPos, 115.0f);
 
 	float dist = 200.0f;
 
@@ -213,14 +218,14 @@ void AAirMoveType::CheckForCollision()
 		lastColWarningType = 0;
 	}
 
-	for (std::vector<CUnit*>::const_iterator ui = others.begin(); ui != others.end(); ++ui) {
-		const CUnit* unit = *ui;
+	for (std::map<boost::int64_t, CUnit*>::const_iterator ui = others.begin(); ui != others.end(); ++ui) {
+		const CUnit* unit = ui->second;
 
 		if (unit == owner || !unit->unitDef->canfly) {
 			continue;
 		}
 
-		const SyncedFloat3& op = unit->midPos;
+		const SyncedFloat3& op = unit->StableMidPos();
 		const float3 dif = op - pos;
 		const float3 forwardDif = forward * (forward.dot(dif));
 
@@ -231,7 +236,7 @@ void AAirMoveType::CheckForCollision()
 		const float3 ortoDif = dif - forwardDif;
 		const float frontLength = forwardDif.Length();
 		// note: radii are multiplied by two
-		const float minOrtoDif = (unit->radius + owner->radius) * 2.0f + frontLength * 0.1f + 10;
+		const float minOrtoDif = (unit->StableRadius()) * 2.0f + frontLength * 0.1f + 10;
 
 		if (ortoDif.SqLength() < (minOrtoDif * minOrtoDif)) {
 			dist = frontLength;
@@ -245,11 +250,12 @@ void AAirMoveType::CheckForCollision()
 		return;
 	}
 
-	for (std::vector<CUnit*>::const_iterator ui = others.begin(); ui != others.end(); ++ui) {
-		if (*ui == owner)
+	for (std::map<boost::int64_t, CUnit*>::const_iterator ui = others.begin(); ui != others.end(); ++ui) {
+		CUnit* u = ui->second;
+		if (u == owner)
 			continue;
-		if (((*ui)->midPos - pos).SqLength() < (dist * dist)) {
-			lastColWarning = *ui;
+		if ((u->StableMidPos() - pos).SqLength() < (dist * dist)) {
+			lastColWarning = u;
 		}
 	}
 
@@ -264,16 +270,17 @@ void AAirMoveType::CheckForCollision()
 bool AAirMoveType::MoveToRepairPad() {
 	CUnit* airBase = reservedPad->GetUnit();
 
-	if (airBase->beingBuilt || airBase->IsStunned()) {
+	if (airBase->StableBeingBuilt() || airBase->StableIsStunned()) {
 		// pad became inoperable after being reserved
 		DependentDied(airBase);
 		return false;
 	} else {
-		const float3& relPadPos = airBase->script->GetPiecePos(reservedPad->GetPiece());
-		const float3 absPadPos = airBase->pos +
-			(airBase->frontdir * relPadPos.z) +
-			(airBase->updir    * relPadPos.y) +
-			(airBase->rightdir * relPadPos.x);
+		owner->QueGetAirBasePiecePos(airBase);
+		const float3& relPadPos = airBasePiecePos;
+		const float3 absPadPos = airBase->StablePos() +
+			(airBase->StableFrontDir() * relPadPos.z) +
+			(airBase->StableUpDir()    * relPadPos.y) +
+			(airBase->StableRightDir() * relPadPos.x);
 
 		if (padStatus == PAD_STATUS_FLYING) {
 			if (aircraftState != AIRCRAFT_FLYING && aircraftState != AIRCRAFT_TAKEOFF) {
@@ -311,14 +318,14 @@ bool AAirMoveType::MoveToRepairPad() {
 			owner->pos = absPadPos;
 
 			owner->UpdateMidAndAimPos(); // needed here?
-			owner->AddBuildPower(airBase->unitDef->buildSpeed / GAME_SPEED, airBase);
+			owner->QueAddBuildPower(airBase->unitDef->buildSpeed / GAME_SPEED, airBase);
 
 			owner->currentFuel += (owner->unitDef->maxFuel / (GAME_SPEED * owner->unitDef->refuelTime));
 			owner->currentFuel = std::min(owner->unitDef->maxFuel, owner->currentFuel);
 
 			if (owner->health >= owner->maxHealth - 1.0f && owner->currentFuel >= owner->unitDef->maxFuel) {
 				// repaired and filled up, leave the pad
-				UnreservePad(reservedPad);
+				owner->QueUnreservePad();
 			}
 		}
 	}

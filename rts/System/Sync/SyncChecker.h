@@ -4,7 +4,7 @@
 #define SYNCCHECKER_H
 
 #ifdef SYNCCHECK
-
+#include "System/Platform/ThreadingConfig.h"
 #ifdef TRACE_SYNC
 	#include "SyncTracer.h"
 #endif
@@ -38,6 +38,8 @@ class CSyncChecker {
 		static void NewFrame() { g_checksum = 0xfade1eaf; }
 
 		static void Sync(const void* p, unsigned size) {
+			if (Threading::multiThreadedSim)
+				return; // the current "sync" implementation is obviously not MT compatible :(
 			// most common cases first, make it easy for compiler to optimize for it
 			// simple xor is not enough to detect multiple zeroes, e.g.
 #ifdef TRACE_SYNC_HEAVY

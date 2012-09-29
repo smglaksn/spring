@@ -53,6 +53,7 @@ AMoveType::AMoveType(CUnit* owner):
 
 void AMoveType::SlowUpdate()
 {
+	ASSERT_SINGLETHREADED_SIM();
 	if (owner->pos != oldSlowUpdatePos) {
 		oldSlowUpdatePos = owner->pos;
 
@@ -93,3 +94,15 @@ void AMoveType::KeepPointingTo(CUnit* unit, float distance, bool aggressive)
 bool AMoveType::WantsRepair() const { return (owner->health      < (repairBelowHealth * owner->maxHealth)); }
 bool AMoveType::WantsRefuel() const { return (owner->currentFuel < (repairBelowHealth * owner->unitDef->maxFuel)); }
 
+#if STABLE_UPDATE
+void AMoveType::StableSlowUpdate() {
+	stableIsSkidding = IsSkidding();
+	stableIsFlying = IsFlying();
+	stableGoalPos = goalPos;
+}
+
+void AMoveType::StableUpdate(bool slow) {
+	if (slow)
+		StableSlowUpdate();
+}
+#endif

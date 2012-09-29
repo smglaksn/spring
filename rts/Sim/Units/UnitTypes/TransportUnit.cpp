@@ -322,7 +322,7 @@ void CTransportUnit::AttachUnit(CUnit* unit, int piece)
 		selectedUnits.RemoveUnit(unit);
 	}
 
-	unit->UnBlock();
+	unit->QueUnBlock();
 	loshandler->FreeInstance(unit->los);
 	radarhandler->RemoveUnit(unit);
 
@@ -409,7 +409,7 @@ bool CTransportUnit::DetachUnitCore(CUnit* unit)
 bool CTransportUnit::DetachUnit(CUnit* unit)
 {
 	if (DetachUnitCore(unit)) {
-		unit->Block();
+		unit->QueBlock();
 
 		// erase command queue unless it's a wait command
 		const CCommandQueue& queue = unit->commandAI->commandQue;

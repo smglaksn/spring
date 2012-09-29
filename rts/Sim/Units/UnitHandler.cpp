@@ -20,6 +20,8 @@
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
+#include "Sim/Path/IPathManager.h"
+#include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/EventBatchHandler.h"
 #include "System/Log/ILog.h"
@@ -30,6 +32,7 @@
 #include "System/creg/STL_List.h"
 #include "System/creg/STL_Set.h"
 
+CONFIG(int, SimThreadCount).defaultValue(0).safemodeValue(1).minimumValue(0).maximumValue(GML_MAX_NUM_THREADS);
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -65,7 +68,10 @@ CUnitHandler::CUnitHandler()
 :
 	maxUnitRadius(0.0f),
 	morphUnitToFeature(true),
-	maxUnits(0)
+	maxUnits(0),
+	stopThread(false),
+	unitCount(0),
+	simBarrier(NULL)
 {
 	// note: the number of active teams can change at run-time, so
 	// the team unit limit should be recalculated whenever one dies
@@ -73,6 +79,13 @@ CUnitHandler::CUnitHandler()
 	for (unsigned int n = 0; n < teamHandler->ActiveTeams(); n++) {
 		maxUnits += teamHandler->Team(n)->maxUnits;
 	}
+
+	const size_t numThreads = std::max(0, configHandler->GetInt("SimThreadCount"));
+	const size_t numCores = Threading::GetAvailableCores();
+	simNumExtraThreads = std::max(0, (int)((numThreads == 0) ? numCores : numThreads) - 1);
+#if !MULTITHREADED_SIM
+	simNumExtraThreads = 0;
+#endif
 
 	units.resize(maxUnits, NULL);
 	unitsByDefs.resize(teamHandler->ActiveTeams(), std::vector<CUnitSet>(unitDefHandler->unitDefs.size()));
@@ -98,11 +111,13 @@ CUnitHandler::CUnitHandler()
 
 	slowUpdateIterator = activeUnits.end();
 	airBaseHandler = new CAirBaseHandler();
+	InitThreads();
 }
 
 
 CUnitHandler::~CUnitHandler()
 {
+	CleanThreads();
 	for (std::list<CUnit*>::iterator usi = activeUnits.begin(); usi != activeUnits.end(); ++usi) {
 		// ~CUnit dereferences featureHandler which is destroyed already
 		(*usi)->delayedWreckLevel = -1;
@@ -155,6 +170,7 @@ void CUnitHandler::DeleteUnit(CUnit* unit)
 
 void CUnitHandler::DeleteUnitNow(CUnit* delUnit)
 {
+	delUnit->ExecuteDelayOps();
 	int delTeam = 0;
 	int delType = 0;
 
@@ -203,6 +219,7 @@ void CUnitHandler::Update()
 		GML_STDMUTEX_LOCK(runit); // Update
 
 		if (!unitsToBeRemoved.empty()) {
+			IPathManager::ScopedDisableThreading sdt;
 			GML_RECMUTEX_LOCK(obj); // Update
 
 			while (!unitsToBeRemoved.empty()) {
@@ -253,25 +270,34 @@ void CUnitHandler::Update()
 
 	{
 		SCOPED_TIMER("Unit::MoveType::Update");
-		std::list<CUnit*>::iterator usi;
-		for (usi = activeUnits.begin(); usi != activeUnits.end(); ++usi) {
-			CUnit* unit = *usi;
-			AMoveType* moveType = unit->moveType;
+		Threading::SetMultiThreadedSim(true);
+		Threading::SetThreadedPath(true);
+		// Use the current thread as thread zero. FIRE!
+		MoveTypeThreadFunc(0);
+		Threading::SetMultiThreadedSim(false);
 
-			UNIT_SANITY_CHECK(unit);
-
-			if (moveType->Update()) {
-				eventHandler.UnitMoved(unit);
+		// threaded pathing can run also during ExecuteDelayOps, since Block/UnBlock is further delayed
+		std::map<int, bool> blockOps;
+		for (std::list<CUnit*>::iterator i = activeUnits.begin(); i != activeUnits.end(); ++i) {
+			CUnit* u = *i;
+			if (!u->delayOps.empty()) {
+				int block = u->ExecuteDelayOps(); // can generate new delay ops, but it will execute these also
+				if (block)
+					blockOps[u->id] = block > 0;
 			}
-			if (!unit->pos.IsInBounds() && (unit->speed.SqLength() > (MAX_UNIT_SPEED * MAX_UNIT_SPEED))) {
-				// this unit is not coming back, kill it now without any death
-				// sequence (so deathScriptFinished becomes true immediately)
-				unit->KillUnit(false, true, NULL, false);
-			}
-
-			UNIT_SANITY_CHECK(unit);
-			GML::GetTicks(unit->lastUnitUpdate);
 		}
+
+		IPathManager::ScopedDisableThreading sdt;
+
+		for (std::map<int, bool>::iterator i = blockOps.begin(); i != blockOps.end(); ++i) {
+			if (i->second)
+				units[i->first]->Block();
+			else
+				units[i->first]->UnBlock();
+		}
+
+		pathManager->MergePathCaches();
+		CSolidObject::UpdateStableData();
 	}
 
 	{
@@ -322,7 +348,75 @@ void CUnitHandler::Update()
 }
 
 
+inline void UpdateMoveType(CUnit *unit) {
+	UNIT_SANITY_CHECK(unit);
 
+	if (unit->moveType->Update())
+		unit->QueMove();
+	if (!unit->pos.IsInBounds() && (unit->speed.SqLength() > (MAX_UNIT_SPEED * MAX_UNIT_SPEED))) {
+		// this unit is not coming back, kill it now without any death
+		// sequence (so deathScriptFinished becomes true immediately)
+		unit->QueKillUnit();
+	}
+
+	UNIT_SANITY_CHECK(unit);
+	GML::GetTicks(unit->lastUnitUpdate);
+}
+
+
+void CUnitHandler::MoveTypeThreadFunc(int i) {
+	if (simNumExtraThreads > 0) {
+		if (i > 0) {
+			streflop::streflop_init<streflop::Simple>();
+			GML::ThreadNumber(GML_MAX_NUM_THREADS + i);
+		}
+		do {
+			if (i == 0)
+				unitCount %= -1;
+			simBarrier->wait();
+			if (stopThread)
+				break;
+			int curPos = 0;
+			std::list<CUnit*>::iterator usi = activeUnits.begin();
+			while(true) {
+				int nextPos = ++unitCount;
+				if (nextPos >= activeUnits.size())	break;
+				while(curPos < nextPos) { ++usi; ++curPos; }
+
+				CUnit *unit = *usi;
+				Threading::SetThreadCurrentUnitID(unit->id);
+				UpdateMoveType(unit);
+			}
+			simBarrier->wait();
+		} while (i > 0);
+	}
+	else {
+		for (std::list<CUnit*>::iterator usi = activeUnits.begin(); usi != activeUnits.end(); ++usi) {
+			CUnit *unit = *usi;
+			Threading::SetThreadCurrentUnitID(unit->id);
+			UpdateMoveType(unit);
+		}
+	}
+}
+
+void CUnitHandler::InitThreads() {
+	simBarrier = new boost::barrier(simNumExtraThreads + 1);
+
+	for (unsigned int i = 1; i <= simNumExtraThreads; i++) {
+		simThreads[i] = new boost::thread(boost::bind(&CUnitHandler::MoveTypeThreadFunc, this, i));
+	}
+}
+
+void CUnitHandler::CleanThreads() {
+	stopThread = true;
+	simBarrier->wait();
+	for (unsigned int i = 1; i <= simNumExtraThreads; i++) {
+		simThreads[i]->join();
+		delete simThreads[i];
+	}
+
+	delete simBarrier;
+}
 
 // find the reference height for a build-position
 // against which to compare all footprint squares

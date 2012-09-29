@@ -232,6 +232,11 @@ void QTPFS::PathManager::SpawnBoostThreads(MemberFunc f, const SRectangle& r) {
 }
 
 
+void QTPFS::PathManager::MergePathCaches() {
+	for(std::vector<PathCache>::iterator i = pathCaches.begin(); i != pathCaches.end(); ++i)
+		i->Merge();
+}
+
 
 void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 	streflop::streflop_init<streflop::Simple>();
@@ -527,7 +532,8 @@ void QTPFS::PathManager::Serialize(const std::string& cacheFileDir) {
 //     this event (because map and features are already
 //     present when PathManager gets instantiated)
 //
-void QTPFS::PathManager::TerrainChange(unsigned int x1, unsigned int z1,  unsigned int x2, unsigned int z2) {
+void QTPFS::PathManager::TerrainChange(ST_FUNC unsigned int x1, unsigned int z1,  unsigned int x2, unsigned int z2) {
+	ASSERT_SINGLETHREADED_SIM();
 	SCOPED_TIMER("PathManager::TerrainChange");
 
 	#ifdef QTPFS_STAGGERED_LAYER_UPDATES
@@ -548,7 +554,7 @@ void QTPFS::PathManager::TerrainChange(unsigned int x1, unsigned int z1,  unsign
 
 
 
-void QTPFS::PathManager::Update() {
+void QTPFS::PathManager::Update(ST_FUNC int unused) {
 	SCOPED_TIMER("PathManager::Update");
 
 	#ifdef QTPFS_ENABLE_THREADED_UPDATE
@@ -713,7 +719,7 @@ void QTPFS::PathManager::ExecuteSearch(
 		pathTraces[path->GetID()] = search->GetExecutionTrace();
 		#endif
 	} else {
-		DeletePath(path->GetID());
+		DeletePath(ST_CALL path->GetID());
 	}
 
 	*searchesIt = NULL;
@@ -822,7 +828,7 @@ unsigned int QTPFS::PathManager::QueueSearch(
 
 
 
-void QTPFS::PathManager::UpdatePath(const CSolidObject* owner, unsigned int pathID) {
+void QTPFS::PathManager::UpdatePath(ST_FUNC const CSolidObject* owner, unsigned int pathID) {
 	const PathTypeMapIt pathTypeIt = pathTypes.find(pathID);
 
 	if (pathTypeIt != pathTypes.end()) {
@@ -835,7 +841,7 @@ void QTPFS::PathManager::UpdatePath(const CSolidObject* owner, unsigned int path
 	}
 }
 
-void QTPFS::PathManager::DeletePath(unsigned int pathID) {
+void QTPFS::PathManager::DeletePath(ST_FUNC unsigned int pathID) {
 	const PathTypeMapIt pathTypeIt = pathTypes.find(pathID);
 	const PathTraceMapIt pathTraceIt = pathTraces.find(pathID);
 
@@ -853,6 +859,7 @@ void QTPFS::PathManager::DeletePath(unsigned int pathID) {
 }
 
 unsigned int QTPFS::PathManager::RequestPath(
+	ST_FUNC
 	const MoveDef* moveDef,
 	const float3& sourcePoint,
 	const float3& targetPoint,
@@ -866,7 +873,7 @@ unsigned int QTPFS::PathManager::RequestPath(
 
 
 
-bool QTPFS::PathManager::PathUpdated(unsigned int pathID) {
+bool QTPFS::PathManager::PathUpdated(ST_FUNC unsigned int pathID) {
 	const PathTypeMapIt pathTypeIt = pathTypes.find(pathID);
 
 	if (pathTypeIt == pathTypes.end())
@@ -888,6 +895,7 @@ bool QTPFS::PathManager::PathUpdated(unsigned int pathID) {
 
 
 float3 QTPFS::PathManager::NextWayPoint(
+	ST_FUNC
 	unsigned int pathID,
 	float3 point,
 	float, // radius,
@@ -989,10 +997,12 @@ float3 QTPFS::PathManager::NextWayPoint(
 
 
 void QTPFS::PathManager::GetPathWayPoints(
+	ST_FUNC
 	unsigned int pathID,
 	std::vector<float3>& points,
 	std::vector<int>& starts
 ) const {
+	ASSERT_SINGLETHREADED_SIM();
 	const PathTypeMap::const_iterator pathTypeIt = pathTypes.find(pathID);
 
 	if (pathTypeIt == pathTypes.end())

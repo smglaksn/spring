@@ -24,6 +24,8 @@ namespace QTPFS {
 			numCacheMisses.resize(PATH_TYPE_DEAD + 1, 0);
 		}
 
+		void Merge();
+
 		typedef std::map<unsigned int, IPath*> PathMap;
 		typedef std::map<unsigned int, IPath*>::iterator PathMapIt;
 

@@ -6,6 +6,7 @@
 #include "System/creg/STL_Set.h"
 #include "System/Log/ILog.h"
 #include "System/Platform/CrashHandler.h"
+#include "lib/gml/gmlmut.h"
 
 #ifndef USE_MMGR
 # define m_setOwner(file, line, func)
@@ -42,6 +43,7 @@ CObject::CObject() : detached(false)
 
 void CObject::Detach()
 {
+	ASSERT_SINGLETHREADED_SIM();
 	// SYNCED
 	assert(!detached);
 	detached = true;
@@ -150,6 +152,9 @@ void CObject::DependentDied(CObject* obj)
 // and preferably try to delete the dependence asap in order not to waste memory
 void CObject::AddDeathDependence(CObject* obj, DependenceType dep)
 {
+#if MULTITHREADED_SIM
+	GML_STDMUTEX_LOCK(ddep); // AddDeathDependence
+#endif
 	assert(!detached);
 	m_setOwner(__FILE__, __LINE__, __FUNCTION__);
 	listening[dep].insert(obj);
@@ -162,6 +167,9 @@ void CObject::AddDeathDependence(CObject* obj, DependenceType dep)
 
 void CObject::DeleteDeathDependence(CObject* obj, DependenceType dep)
 {
+#if MULTITHREADED_SIM
+	GML_STDMUTEX_LOCK(ddep); // DeleteDeathDependence
+#endif
 	assert(!detached);
 	m_setOwner(__FILE__, __LINE__, __FUNCTION__);
 	obj->listeners[dep].erase(this);

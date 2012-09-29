@@ -148,10 +148,10 @@ bool CMoveMath::IsBlockedStructureZmax(const MoveDef& moveDef, int xSquare, int 
  */
 bool CMoveMath::CrushResistant(const MoveDef& colliderMD, const CSolidObject* collidee)
 {
-	if (!collidee->blocking) { return false; }
-	if (!collidee->crushable) { return true; }
+	if (!collidee->StableBlocking()) { return false; }
+	if (!collidee->StableCrushable()) { return true; }
 
-	return (collidee->crushResistance > colliderMD.crushStrength);
+	return (collidee->StableCrushResistance() > colliderMD.crushStrength);
 }
 
 /*
@@ -160,29 +160,29 @@ bool CMoveMath::CrushResistant(const MoveDef& colliderMD, const CSolidObject* co
  */
 bool CMoveMath::IsNonBlocking(const MoveDef& colliderMD, const CSolidObject* collidee, const CSolidObject* collider)
 {
-	if (!collidee->blocking)
+	if (!collidee->StableBlocking())
 		return true;
 
 	if (collider == collidee)
 		return true;
 
 	// if obstacle is out of map bounds, it cannot block us
-	if (!collidee->pos.IsInBounds())
+	if (!collidee->StablePos().IsInBounds())
 		return true;
 
 	// if unit is restricted to land with height > 0,
 	// it can not be blocked by underwater obstacles
 	if (colliderMD.terrainClass == MoveDef::Land)
-		return (collidee->isUnderWater);
+		return (collidee->StableUnderWater());
 
 	// some objects appear to have negative model heights
 	// (the model parsers allow it for some reason), take
 	// absolute values to prevent them from being regarded
 	// as non-blocking
-	const float colliderMdlHgt = (collider != NULL)? math::fabs(collider->height): 1e6;
-	const float collideeMdlHgt =                     math::fabs(collidee->height);
-	const float colliderGndAlt = (collider != NULL)? collider->pos.y: 1e6f;
-	const float collideeGndAlt =                     collidee->pos.y;
+	const float colliderMdlHgt = (collider != NULL)? math::fabs(collider->StableHeight()): 1e6;
+	const float collideeMdlHgt =                     math::fabs(collidee->StableHeight());
+	const float colliderGndAlt = (collider != NULL)? collider->StablePos().y: 1e6f;
+	const float collideeGndAlt =                     collidee->StablePos().y;
 
 	if (collider != NULL) {
 		// simple case: if unit and obstacle have non-zero
@@ -223,7 +223,7 @@ bool CMoveMath::IsNonBlocking(const MoveDef& colliderMD, const CSolidObject* col
 	//
 	if (colliderMD.followGround) {
 		const float collideeMinHgt = collideeGndAlt - collideeMdlHgt;
-		const float colliderMaxHgt = ground->GetHeightReal(collidee->pos.x, collidee->pos.z) + (SQUARE_SIZE >> 1);
+		const float colliderMaxHgt = ground->GetHeightReal(collidee->StablePos().x, collidee->StablePos().z) + (SQUARE_SIZE >> 1);
 		// FIXME: would be the correct way, but values are invalid here
 		// const float colliderMaxHgt = colliderGndAlt + colliderMdlHgt;
 
@@ -262,13 +262,13 @@ CMoveMath::BlockType CMoveMath::SquareIsBlocked(const MoveDef& moveDef, int xSqu
 			continue;
 		}
 
-		if (!obstacle->immobile) {
+		if (!obstacle->StableImmobile()) {
 			// mobile obstacle
-			if (obstacle->isMoving) {
+			if (obstacle->StableIsMoving()) {
 				r |= BLOCK_MOVING;
 			} else {
 				CUnit& u = *static_cast<CUnit*>(obstacle);
-				if (!u.beingBuilt && u.commandAI->commandQue.empty()) {
+				if (!u.StableBeingBuilt() && u.commandAI->commandQue.empty()) {
 					// idling mobile unit
 					r |= BLOCK_MOBILE;
 				} else {

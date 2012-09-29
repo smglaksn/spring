@@ -11,6 +11,7 @@
 #include "Sim/Objects/SolidObject.h"
 #include "Sim/Units/UnitHandler.h"
 #include "System/Matrix44f.h"
+#include "System/Platform/Threading.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/ModInfo.h"
 
@@ -76,6 +77,11 @@ public:
 		}
 	}
 
+	void QueBlock(bool delay = Threading::threadedPath || Threading::multiThreadedSim);
+	void QueUnBlock(bool delay = Threading::threadedPath || Threading::multiThreadedSim);
+
+	void ExecuteDelayOps();
+
 public:
 	int defID;
 
@@ -105,6 +111,17 @@ public:
 
 	float finalHeight;
 	bool reachedFinalPos;
+
+#if STABLE_UPDATE
+	bool stableReachedFinalPos;
+	// shall return "stable" values, that do not suddenly change during a sim frame. (for multithreading purposes)
+	bool StableReachedFinalPos() { return stableReachedFinalPos; }
+
+	virtual void StableUpdate(bool slow);
+	void StableSlowUpdate();
+#else
+	bool StableReachedFinalPos() { return reachedFinalPos; }
+#endif
 
 	CFireProjectile* myFire;
 	int fireTime;

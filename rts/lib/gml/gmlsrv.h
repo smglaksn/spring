@@ -296,8 +296,7 @@ public:
 		new (ex+1) GML_TYPENAME gmlExecState<R,A,U>(wrk,wrka,wrkit,cls,mt,sm,nu,it,l1,l2,sw,swf);
 		newwork=TRUE;
 
-		while(!qd->Empty())
-			boost::thread::yield();
+		qd->WaitFinish();
 		++ClientsReady;	
 		gmlClientSub();
 
@@ -350,8 +349,7 @@ public:
 //			}
 		}
 		qd->ReleaseWrite();
-		while(!qd->Empty())
-			boost::thread::yield();
+		qd->WaitFinish();
 		++ClientsReady;	
 	}
 

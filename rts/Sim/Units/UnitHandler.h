@@ -9,6 +9,7 @@
 #include "UnitDef.h"
 #include "UnitSet.h"
 #include "CommandAI/Command.h"
+#include <boost/thread/barrier.hpp>
 
 class CUnit;
 class CBuilderCAI;
@@ -33,6 +34,9 @@ public:
 	CUnitHandler();
 	~CUnitHandler();
 
+	void MoveTypeThreadFunc(int i);
+	void InitThreads();
+	void CleanThreads();
 	void Update();
 	void DeleteUnit(CUnit* unit);
 	void DeleteUnitNow(CUnit* unit);
@@ -88,6 +92,12 @@ private:
 
 	///< global unit-limit (derived from the per-team limit)
 	unsigned int maxUnits;
+
+	int simNumExtraThreads;
+	boost::barrier* simBarrier;
+	boost::thread* simThreads[GML_MAX_NUM_THREADS];
+	gmlCount unitCount;
+	volatile bool stopThread;
 };
 
 extern CUnitHandler* uh;

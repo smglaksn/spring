@@ -17,6 +17,7 @@
 #include "Lua/LuaUnitMaterial.h"
 #include "Sim/Objects/SolidObject.h"
 #include "System/Matrix44f.h"
+#include "System/Platform/Threading.h"
 #include "System/Vec2.h"
 
 class CPlayer;
@@ -495,6 +496,63 @@ public:
 	/// start this unit in free fall from parent unit
 	void Drop(const float3& parentPos, const float3& parentDir, CUnit* parent);
 	void PostLoad();
+
+#if STABLE_UPDATE
+	bool stableBlockEnemyPushing;
+	bool stableBeingBuilt;
+	bool stableIsDead;
+	const CTransportUnit* stableTransporter;
+	bool stableStunned;
+	// shall return "stable" values, that do not suddenly change during a sim frame. (for multithreading purposes)
+	const bool StableBlockEnemyPushing() const { return stableBlockEnemyPushing; }
+	const bool StableUsingScriptMoveType() const { return usingScriptMoveType; } // appears to be MT stable by itself
+	const bool StableBeingBuilt() const { return stableBeingBuilt; }
+	const bool StableIsDead() const { return stableIsDead; }
+	const CTransportUnit* StableTransporter() const { return stableTransporter; }
+	const bool StableIsStunned() const { return stableStunned; }
+
+	virtual void StableUpdate(bool slow);
+	void StableSlowUpdate();
+#else
+	const bool StableBlockEnemyPushing() const { return blockEnemyPushing; }
+	const bool StableUsingScriptMoveType() const { return usingScriptMoveType; }
+	const bool StableBeingBuilt() const { return beingBuilt; }
+	const bool StableIsDead() const { return isDead; }
+	const CTransportUnit* StableTransporter() const { return transporter; }
+	const bool StableIsStunned() const { return stunned; }
+#endif
+
+	void QueScriptStopMoving(bool delay = Threading::multiThreadedSim);
+	void QueScriptStartMoving(bool delay = Threading::multiThreadedSim);
+	void QueScriptLanded(bool delay = Threading::multiThreadedSim);
+	void QueScriptMoveRate(int rate, bool delay = Threading::multiThreadedSim);
+	void QueCAISlowUpdate(bool delay = Threading::multiThreadedSim);
+	void QueCAIStopMove(bool delay = Threading::multiThreadedSim);
+	void QueFail(bool delay = Threading::multiThreadedSim);
+	void QueActivate(bool delay = Threading::multiThreadedSim);
+	void QueDeactivate(bool delay = Threading::multiThreadedSim);
+	void QueBlock(bool delay = Threading::threadedPath || Threading::multiThreadedSim);
+	void QueUnBlock(bool delay = Threading::threadedPath || Threading::multiThreadedSim);
+	void QueUnitUnitCollision(const CUnit *u, bool delay = Threading::multiThreadedSim);
+	void QueUnitFeatureCollision(const CSolidObject *f, bool delay = Threading::multiThreadedSim);
+	void QueBuggerOff(bool delay = Threading::multiThreadedSim);
+	void QueKillUnit(bool delay = Threading::multiThreadedSim);
+	void QueMove(bool delay = Threading::multiThreadedSim);
+	void QueUnreservePad(bool delay = Threading::multiThreadedSim);
+	void QueCheckNotify(bool delay = Threading::multiThreadedSim);
+	void QueMoveFeature(CSolidObject *o, const float3& vec, bool delay = Threading::multiThreadedSim);
+	void QueMoveUnit(CSolidObject *o, const float3& vec, bool rel, bool terrcheck, bool delay = Threading::multiThreadedSim);
+	void QueDoDamage(CSolidObject *o, float damage, const float3& impulse, int d, bool delay = Threading::multiThreadedSim);
+	void QueChangeSpeed(CSolidObject *o, const float3& add, float mult, bool delay = Threading::multiThreadedSim);
+	void QueKill(CSolidObject *o, const float3& impulse, bool crush, bool delay = Threading::multiThreadedSim);
+	void QueSetSkidding(CSolidObject *o, bool bset, bool delay = Threading::multiThreadedSim);
+	void QueUpdateMidAndAimPos(CSolidObject *o, bool delay = Threading::multiThreadedSim);
+	void QueAddBuildPower(float amount, CSolidObject *o, bool delay = Threading::multiThreadedSim);
+	void QueGetAirBasePiecePos(CSolidObject *o, bool delay = Threading::multiThreadedSim);
+	void QueMoveUnitOldPos(CSolidObject *o, bool delay = Threading::multiThreadedSim);
+
+
+	int ExecuteDelayOps();
 
 public:
 	static void  SetExpMultiplier(float value) { expMultiplier = value; }

@@ -138,6 +138,7 @@ CClassicGroundMoveType::CClassicGroundMoveType(CUnit* owner):
 
 CClassicGroundMoveType::~CClassicGroundMoveType()
 {
+	ASSERT_SINGLETHREADED_SIM();
 	if (pathId != 0) {
 		pathManager->DeletePath(pathId);
 	}
@@ -174,7 +175,7 @@ bool CClassicGroundMoveType::Update()
 	bool hasMoved = false;
 
 	if (owner->IsStunned() || owner->beingBuilt) {
-		owner->script->StopMoving();
+		owner->QueScriptStopMoving();
 		owner->speed = ZeroVector;
 	} else {
 		if (owner->fpsControlPlayer != NULL) {
@@ -261,6 +262,12 @@ bool CClassicGroundMoveType::Update()
 
 void CClassicGroundMoveType::SlowUpdate()
 {
+	ASSERT_SINGLETHREADED_SIM();
+
+	if (pathId > 0 && pathManager->IsFailPath(pathId)) {
+		pathManager->DeletePath(pathId);
+		pathId = 0;
+	}
 	if (owner->transporter) {
 		if (progressState == Active)
 			StopEngine();
@@ -470,7 +477,7 @@ void CClassicGroundMoveType::ImpulseAdded()
 		speed += impulse;
 		impulse = ZeroVector;
 
-		skidRotSpeed += (gs->randFloat() - 0.5f) * 1500;
+		skidRotSpeed += (gs->randFloat(owner) - 0.5f) * 1500;
 		skidRotPos2 = 0;
 		skidRotSpeed2 = 0;
 		float3 skidDir(speed);
@@ -483,7 +490,7 @@ void CClassicGroundMoveType::ImpulseAdded()
 
 		if (speed.dot(groundNormal) > 0.2f) {
 			flying = true;
-			skidRotSpeed2 = (gs->randFloat() - 0.5f) * 0.04f;
+			skidRotSpeed2 = (gs->randFloat(owner) - 0.5f) * 0.04f;
 		}
 	}
 }
@@ -508,7 +515,7 @@ void CClassicGroundMoveType::UpdateSkid()
 
 		if(wh>midPos.y-owner->relMidPos.y){
 			flying=false;
-			skidRotSpeed+=(gs->randFloat()-0.5f)*1500;
+			skidRotSpeed+=(gs->randFloat(owner)-0.5f)*1500;
 			owner->Move1D(wh+owner->relMidPos.y-speed.y*0.5f, 1, false);
 			float impactSpeed = -speed.dot(ground->GetNormal(midPos.x,midPos.z));
 			if (impactSpeed > owner->unitDef->minCollisionSpeed && owner->unitDef->minCollisionSpeed >= 0) {
@@ -607,7 +614,7 @@ void CClassicGroundMoveType::UpdateControlledDrop()
 
 		if(wh > midPos.y-owner->relMidPos.y){
 			owner->Move1D(wh + owner->relMidPos.y - speed.y*0.8, 1, (owner->falling = false));
-			owner->script->Landed();
+			owner->QueScriptLanded();
 		}
 	}
 }
@@ -616,17 +623,17 @@ void CClassicGroundMoveType::CheckCollisionSkid()
 {
 	const SyncedFloat3& midPos = owner->midPos;
 
-	const vector<CUnit*>& nearUnits = qf->GetUnitsExact(midPos, owner->radius);
-	const vector<CFeature*>& nearFeatures = qf->GetFeaturesExact(midPos, owner->radius);
+	const std::map<boost::int64_t, CUnit*>& nearUnits = qf->GetUnitsExactStable(midPos, owner->radius);
+	const std::map<boost::int64_t, CFeature*>& nearFeatures = qf->GetFeaturesExactStable(midPos, owner->radius);
 
-	for (vector<CUnit*>::const_iterator ui = nearUnits.begin(); ui != nearUnits.end(); ++ui) {
-		CUnit* u = (*ui);
-		float sqDist = (midPos - u->midPos).SqLength();
-		float totRad = owner->radius + u->radius;
+	for (std::map<boost::int64_t, CUnit*>::const_iterator ui = nearUnits.begin(); ui != nearUnits.end(); ++ui) {
+		CUnit* u = ui->second;
+		float sqDist = (midPos - u->StableMidPos()).SqLength();
+		float totRad = owner->radius + u->StableRadius();
 
 		if (sqDist < totRad * totRad && sqDist != 0) {
 			float dist = math::sqrt(sqDist);
-			float3 dif = midPos - u->midPos;
+			float3 dif = midPos - u->StableMidPos();
 			dif /= std::max(dist, 1.f);
 
 			if (!u->moveDef) {
@@ -640,22 +647,22 @@ void CClassicGroundMoveType::CheckCollisionSkid()
 						owner->DoDamage(DamageArray(impactSpeed * owner->mass * 0.2f), ZeroVector, NULL, -1);
 					}
 					if (impactSpeed > u->unitDef->minCollisionSpeed && u->unitDef->minCollisionSpeed >= 0) {
-						u->DoDamage(DamageArray(impactSpeed * owner->mass * 0.2f), ZeroVector, NULL, -1);
+						owner->QueDoDamage(u, impactSpeed * owner->mass * 0.2f, ZeroVector, -1);
 					}
 				}
 			} else {
-				float part = (owner->mass / (owner->mass + u->mass));
-				float impactSpeed = (u->speed - owner->speed).dot(dif) * 0.5f;
+				float part = (owner->mass / (owner->mass + u->StableMass()));
+				float impactSpeed = (u->StableSpeed() - owner->speed).dot(dif) * 0.5f;
 
 				if (impactSpeed > 0) {
 					owner->Move3D(dif * (impactSpeed * (1 - part) * 2), true);
-					u->Move3D(dif * (impactSpeed * part * 2), true);
+					owner->QueMoveUnit(u, dif * (impactSpeed * part * 2), true, false);
 
 					owner->speed += dif * (impactSpeed * (1 - part) * 2);
-					u->speed -= dif * (impactSpeed * part * 2);
+					owner->QueChangeSpeed(u, -dif * (impactSpeed * part * 2), 0.9f);
 
-					if (CClassicGroundMoveType* mt = dynamic_cast<CClassicGroundMoveType*>(u->moveType)) {
-						mt->skidding = true;
+					if (CClassicGroundMoveType* mt = dynamic_cast<CClassicGroundMoveType*>(u->moveType)) { // PROBLEM MT STABLE?
+						owner->QueSetSkidding(u, true);
 					}
 					if (impactSpeed > owner->unitDef->minCollisionSpeed && owner->unitDef->minCollisionSpeed >= 0) {
 						owner->DoDamage(
@@ -664,26 +671,23 @@ void CClassicGroundMoveType::CheckCollisionSkid()
 					}
 
 					if (impactSpeed > u->unitDef->minCollisionSpeed && u->unitDef->minCollisionSpeed >= 0) {
-						u->DoDamage(
-							DamageArray(impactSpeed * owner->mass * 0.2f * part),
-							dif * -impactSpeed * (u->mass * part), NULL, -1);
+						owner->QueDoDamage(u, impactSpeed * owner->mass * 0.2f * part, dif * -impactSpeed * (u->StableMass() * part), -1);
 					}
 					owner->speed *= 0.9f;
-					u->speed *= 0.9f;
 				}
 			}
 		}
 	}
 
-	for (vector<CFeature*>::const_iterator fi = nearFeatures.begin(); fi != nearFeatures.end(); ++fi) {
-		CFeature* u=(*fi);
-		if(!u->blocking)
+	for (std::map<boost::int64_t, CFeature*>::const_iterator fi = nearFeatures.begin(); fi != nearFeatures.end(); ++fi) {
+		CFeature* u = fi->second;
+		if(!u->StableBlocking())
 			continue;
-		float sqDist=(midPos-u->midPos).SqLength();
-		float totRad=owner->radius+u->radius;
+		float sqDist=(midPos-u->StableMidPos()).SqLength();
+		float totRad=owner->radius+u->StableRadius();
 		if(sqDist<totRad*totRad && sqDist!=0){
 			float dist=math::sqrt(sqDist);
-			float3 dif=midPos-u->midPos;
+			float3 dif=midPos-u->StableMidPos();
 			dif/=std::max(dist, 1.f);
 			float impactSpeed = -owner->speed.dot(dif);
 			if(impactSpeed > 0){
@@ -692,7 +696,7 @@ void CClassicGroundMoveType::CheckCollisionSkid()
 				if (impactSpeed > owner->unitDef->minCollisionSpeed && owner->unitDef->minCollisionSpeed >= 0) {
 					owner->DoDamage(DamageArray(impactSpeed*owner->mass*0.2f), ZeroVector, NULL, -1);
 				}
-				u->DoDamage(DamageArray(impactSpeed*owner->mass*0.2f), -dif*impactSpeed, NULL, -1);
+				owner->QueDoDamage(u, impactSpeed * owner->mass * 0.2f, -dif * impactSpeed, -1);
 			}
 		}
 	}
@@ -787,22 +791,21 @@ float3 CClassicGroundMoveType::ObstacleAvoidance(float3 desiredDir) {
 
 			MoveDef* moveDef = owner->moveDef;
 
-			vector<CSolidObject*> nearbyObjects = qf->GetSolidsExact(owner->pos, speedf * 35 + 30 + owner->xsize / 2);
+			std::map<boost::int64_t, CSolidObject*> nearbyObjects = qf->GetSolidsExactStable(owner->pos, speedf * 35 + 30 + owner->xsize / 2);
 			vector<CSolidObject*> objectsOnPath;
-			vector<CSolidObject*>::iterator oi;
 
-			for (oi = nearbyObjects.begin(); oi != nearbyObjects.end(); ++oi) {
-				CSolidObject* o = *oi;
+			for (std::map<boost::int64_t, CSolidObject*>::const_iterator oi = nearbyObjects.begin(); oi != nearbyObjects.end(); ++oi) {
+				CSolidObject* o = oi->second;
 				CMoveMath* moveMath = moveDef->moveMath;
 
 				if (moveMath->IsNonBlocking(*moveDef, o, owner)) {
 					continue;
 				}
 
-				if (o != owner && moveMath->CrushResistant(*moveDef, o) && desiredDir.dot(o->pos - owner->pos) > 0) {
-					float3 objectToUnit = (owner->pos - o->pos - o->speed * 30);
+				if (o != owner && moveMath->CrushResistant(*moveDef, o) && desiredDir.dot(o->StablePos() - owner->pos) > 0) {
+					float3 objectToUnit = (owner->pos - o->StablePos() - o->StableSpeed() * 30);
 					float distanceToObjectSq = objectToUnit.SqLength();
-					float radiusSum = (owner->xsize + o->xsize) * SQUARE_SIZE / 2;
+					float radiusSum = (owner->xsize + o->StableXSize()) * SQUARE_SIZE / 2;
 					float distanceLimit = speedf * 35 + 10 + radiusSum;
 					float distanceLimitSq = distanceLimit * distanceLimit;
 
@@ -853,16 +856,16 @@ float3 CClassicGroundMoveType::ObstacleAvoidance(float3 desiredDir) {
 float CClassicGroundMoveType::Distance2D(CSolidObject* object1, CSolidObject* object2, float marginal)
 {
 	float dist2D;
-	if (object1->xsize == object1->zsize || object2->xsize == object2->zsize) {
-		float3 distVec = (object1->midPos - object2->midPos);
-		dist2D = distVec.Length2D() - (object1->xsize + object2->xsize) * SQUARE_SIZE / 2 + 2 * marginal;
+	if (object1->xsize == object1->zsize || object2->StableXSize() == object2->StableZSize()) {
+		float3 distVec = (object1->midPos - object2->StableMidPos());
+		dist2D = distVec.Length2D() - (object1->xsize + object2->StableXSize()) * SQUARE_SIZE / 2 + 2 * marginal;
 	} else {
 		float3 distVec;
-		float xdiff = math::fabs(object1->midPos.x - object2->midPos.x);
-		float zdiff = math::fabs(object1->midPos.z - object2->midPos.z);
+		float xdiff = math::fabs(object1->midPos.x - object2->StableMidPos().x);
+		float zdiff = math::fabs(object1->midPos.z - object2->StableMidPos().z);
 
-		distVec.x = xdiff - (object1->xsize + object2->xsize) * SQUARE_SIZE / 2 + 2 * marginal;
-		distVec.z = zdiff - (object1->zsize + object2->zsize) * SQUARE_SIZE / 2 + 2 * marginal;
+		distVec.x = xdiff - (object1->xsize + object2->StableXSize()) * SQUARE_SIZE / 2 + 2 * marginal;
+		distVec.z = zdiff - (object1->zsize + object2->StableZSize()) * SQUARE_SIZE / 2 + 2 * marginal;
 
 		if (distVec.x > 0.0f && distVec.z > 0.0f) {
 			dist2D = distVec.Length2D();
@@ -976,7 +979,7 @@ void CClassicGroundMoveType::StartEngine() {
 			pathFailures = 0;
 			etaFailures = 0;
 			owner->isMoving = true;
-			owner->script->StartMoving();
+			owner->QueScriptStartMoving();
 		} else {
 			Fail();
 		}
@@ -993,7 +996,7 @@ void CClassicGroundMoveType::StopEngine() {
 			waypoint = Here();
 		}
 
-		owner->script->StopMoving();
+		owner->QueScriptStopMoving();
 	}
 
 	owner->isMoving = false;
@@ -1012,7 +1015,7 @@ void CClassicGroundMoveType::Arrived()
 		}
 
 		progressState = Done;
-		owner->commandAI->SlowUpdate();
+		owner->QueCAISlowUpdate();
 	}
 }
 
@@ -1022,8 +1025,7 @@ void CClassicGroundMoveType::Fail()
 
 	progressState = Failed;
 
-	eventHandler.UnitMoveFailed(owner);
-	eoh->UnitMoveFailed(*owner);
+	owner->QueFail();
 }
 
 
@@ -1075,8 +1077,7 @@ void CClassicGroundMoveType::CheckCollision()
 		}
 		while (haveCollided && retest < 2);
 
-		// owner->UnBlock();
-		owner->Block();
+		owner->QueBlock();
 	}
 
 	return;
@@ -1111,8 +1112,8 @@ bool CClassicGroundMoveType::CheckColH(int x, int y1, int y2, float xmove, int s
 				blocked = true;
 
 				if (obj->moveDef != NULL) {
-					float part = owner->mass / (owner->mass + obj->mass * 2.0f);
-					float3 dif = obj->pos - owner->pos;
+					float part = owner->mass / (owner->mass + obj->StableMass() * 2.0f);
+					float3 dif = obj->StablePos() - owner->pos;
 					float dl = dif.Length();
 					float colDepth = math::fabs(owner->pos.x - xmove);
 
@@ -1121,18 +1122,18 @@ bool CClassicGroundMoveType::CheckColH(int x, int y1, int y2, float xmove, int s
 
 					CUnit* u = static_cast<CUnit*>(obj);
 
-					const int uAllyTeam = u->allyteam;
+					const int uAllyTeam = u->allyteam; // PROBLEM MT STABLE?
 					const int oAllyTeam = owner->allyteam;
 					const bool allied = (teamHandler->Ally(uAllyTeam, oAllyTeam) || teamHandler->Ally(oAllyTeam, uAllyTeam));
 
-					if (!u->unitDef->pushResistant && !u->usingScriptMoveType && allied) {
-						u->Move3D((dif * part), true);
-						u->UpdateMidAndAimPos();
+					if (!u->unitDef->pushResistant && !u->StableUsingScriptMoveType() && allied) {
+						owner->QueMoveUnit(u, dif * part, true, false);
+						owner->QueUpdateMidAndAimPos(u);
 					}
 				}
 
 				if (!m->moveMath->CrushResistant(*m, obj)) {
-					obj->Kill(owner->frontdir * currentSpeed * 200.0f, true);
+					owner->QueKill(obj, owner->frontdir * currentSpeed * 200.0f, true);
 				}
 			}
 		}
@@ -1146,7 +1147,7 @@ bool CClassicGroundMoveType::CheckColH(int x, int y1, int y2, float xmove, int s
 			}
 
 			if (!((gs->frameNum + owner->id) & 31) && !owner->commandAI->unimportantMove) {
-				helper->BuggerOff(owner->pos + owner->frontdir * owner->radius, owner->radius, true, false, owner->team, owner);
+				owner->QueBuggerOff();
 			}
 
 			owner->Move3D(posDelta, true);
@@ -1189,8 +1190,8 @@ bool CClassicGroundMoveType::CheckColV(int y, int x1, int x2, float zmove, int s
 				blocked = true;
 
 				if (obj->moveDef != NULL) {
-					float part = owner->mass / (owner->mass + obj->mass * 2.0f);
-					float3 dif = obj->pos - owner->pos;
+					float part = owner->mass / (owner->mass + obj->StableMass() * 2.0f);
+					float3 dif = obj->StablePos() - owner->pos;
 					float dl = dif.Length();
 					float colDepth = math::fabs(owner->pos.z - zmove);
 
@@ -1199,18 +1200,18 @@ bool CClassicGroundMoveType::CheckColV(int y, int x1, int x2, float zmove, int s
 
 					CUnit* u = static_cast<CUnit*>(obj);
 
-					const int uAllyTeam = u->allyteam;
+					const int uAllyTeam = u->allyteam; // PROBLEM MT STABLE?
 					const int oAllyTeam = owner->allyteam;
 					const bool allied = (teamHandler->Ally(uAllyTeam, oAllyTeam) || teamHandler->Ally(oAllyTeam, uAllyTeam));
 
-					if (!u->unitDef->pushResistant && !u->usingScriptMoveType && allied) {
-						u->Move3D((dif * part), true);
-						u->UpdateMidAndAimPos();
+					if (!u->unitDef->pushResistant && !u->StableUsingScriptMoveType() && allied) {
+						owner->QueMoveUnit(u, dif * part, true, false);
+						owner->QueUpdateMidAndAimPos(u);
 					}
 				}
 
 				if (!m->moveMath->CrushResistant(*m, obj)) {
-					obj->Kill(owner->frontdir * currentSpeed * 200.0f, true);
+					owner->QueKill(obj, owner->frontdir * currentSpeed * 200.0f, true);
 				}
 			}
 		}
@@ -1224,7 +1225,7 @@ bool CClassicGroundMoveType::CheckColV(int y, int x1, int x2, float zmove, int s
 			}
 
 			if (!((gs->frameNum + owner->id) & 31) && !owner->commandAI->unimportantMove) {
-				helper->BuggerOff(owner->pos + owner->frontdir * owner->radius, owner->radius, true, false, owner->team, owner);
+				owner->QueBuggerOff();
 			}
 
 			owner->Move3D(posDelta, true);
@@ -1502,8 +1503,8 @@ void CClassicGroundMoveType::KeepPointingTo(float3 pos, float distance, bool agg
 				GetHeadingFromVector(dir2.x, dir2.z) -
 				GetHeadingFromVector(dir1.x, dir1.z);
 			if (owner->heading != heading
-					&& !(owner->weapons.front()->TryTarget(
-					mainHeadingPos, true, 0))) {
+					&& !(owner->weapons.front()->TryTarget( // Appears to be MT safe since targetUnit is NULL
+					mainHeadingPos, true, NULL))) {
 				progressState = Active;
 			}
 		}
@@ -1535,15 +1536,15 @@ void CClassicGroundMoveType::SetMainHeading() {
 			ASSERT_SYNCED(heading);
 
 			if (progressState == Active && owner->heading == heading) {
-				owner->script->StopMoving();
+				owner->QueScriptStopMoving();
 				progressState = Done;
 			} else if (progressState == Active) {
 				ChangeHeading(heading);
 			} else if (progressState != Active
 			  && owner->heading != heading
-			  && !owner->weapons.front()->TryTarget(mainHeadingPos, true, 0)) {
+			  && !owner->weapons.front()->TryTarget(mainHeadingPos, true, NULL)) { // Appears to be MT safe since targetUnit is NULL
 				progressState = Active;
-				owner->script->StartMoving();
+				owner->QueScriptStartMoving();
 				ChangeHeading(heading);
 			}
 		}
@@ -1600,17 +1601,17 @@ bool CClassicGroundMoveType::UpdateDirectControl()
 		ChangeSpeed();
 
 		owner->isMoving = true;
-		owner->script->StartMoving();
+		owner->QueScriptStartMoving();
 	} else if (unitCon.back) {
 		ChangeSpeed();
 
 		owner->isMoving = true;
-		owner->script->StartMoving();
+		owner->QueScriptStartMoving();
 	} else {
 		ChangeSpeed();
 
 		owner->isMoving = false;
-		owner->script->StopMoving();
+		owner->QueScriptStopMoving();
 	}
 
 	if (unitCon.left ) { ChangeHeading(owner->heading + turnRate); turnSign =  1.0f; }

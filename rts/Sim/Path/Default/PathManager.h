@@ -25,13 +25,15 @@ public:
 	unsigned int GetPathFinderType() const { return PFS_TYPE_DEFAULT; }
 	boost::uint32_t GetPathCheckSum() const;
 
-	void Update();
-	void UpdatePath(const CSolidObject*, unsigned int);
+	void Update(ST_FUNC int unused = 0);
+	void UpdatePath(ST_FUNC const CSolidObject*, unsigned int);
 
-	void DeletePath(unsigned int pathID);
+	void DeletePath(ST_FUNC unsigned int pathID);
+	void MergePathCaches();
 
 
 	float3 NextWayPoint(
+		ST_FUNC
 		unsigned int pathID,
 		float3 callerPos,
 		float minDistance = 0.0f,
@@ -41,6 +43,7 @@ public:
 	);
 
 	unsigned int RequestPath(
+		ST_FUNC
 		const MoveDef* moveDef,
 		const float3& startPos,
 		const float3& goalPos,
@@ -68,14 +71,14 @@ public:
 	 */
 	void GetDetailedPathSquares(unsigned pathID, std::vector<int2>& points) const;
 
-	void GetPathWayPoints(unsigned int pathID, std::vector<float3>& points, std::vector<int>& starts) const;
+	void GetPathWayPoints(ST_FUNC unsigned int pathID, std::vector<float3>& points, std::vector<int>& starts) const;
 
-	void TerrainChange(unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2);
+	void TerrainChange(ST_FUNC unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2);
 
-	bool SetNodeExtraCost(unsigned int, unsigned int, float, bool);
-	bool SetNodeExtraCosts(const float*, unsigned int, unsigned int, bool);
-	float GetNodeExtraCost(unsigned int, unsigned int, bool) const;
-	const float* GetNodeExtraCosts(bool) const;
+	bool SetNodeExtraCost(ST_FUNC unsigned int, unsigned int, float, bool);
+	bool SetNodeExtraCosts(ST_FUNC const float*, unsigned int, unsigned int, bool);
+	float GetNodeExtraCost(ST_FUNC unsigned int, unsigned int, bool) const;
+	const float* GetNodeExtraCosts(ST_FUNC bool) const;
 
 
 	/** Enable/disable heat mapping */

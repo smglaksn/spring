@@ -1524,9 +1524,9 @@ int LuaSyncedCtrl::SetUnitBlocking(lua_State* L)
 
 	if (lua_isboolean(L, 2)) {
 		if (lua_toboolean(L, 2)) {
-			unit->Block();
+			unit->QueBlock();
 		} else {
-			unit->UnBlock();
+			unit->QueUnBlock();
 		}
 	}
 
@@ -1538,7 +1538,7 @@ int LuaSyncedCtrl::SetUnitBlocking(lua_State* L)
 		// the blocking map if unit->blocking was set
 		// to false but arg. #2 was true (no point in
 		// being registered on the map then)
-		unit->Block();
+		unit->QueBlock();
 	}
 
 	unit->crushable = luaL_optboolean(L, 4, unit->crushable);

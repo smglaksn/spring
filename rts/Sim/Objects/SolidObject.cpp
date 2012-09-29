@@ -17,6 +17,8 @@ const float CSolidObject::DEFAULT_MASS = 1e5f;
 const float CSolidObject::MINIMUM_MASS = 1e0f; // 1.0f
 const float CSolidObject::MAXIMUM_MASS = 1e6f;
 
+std::set<CSolidObject *> CSolidObject::solidObjects;
+
 CR_BIND_DERIVED(CSolidObject, CWorldObject, );
 CR_REG_METADATA(CSolidObject,
 (
@@ -115,6 +117,7 @@ CSolidObject::CSolidObject():
 	blockMap(NULL),
 	buildFacing(0)
 {
+	solidObjects.insert(this);
 }
 
 CSolidObject::~CSolidObject() {
@@ -125,9 +128,44 @@ CSolidObject::~CSolidObject() {
 
 	delete collisionVolume;
 	collisionVolume = NULL;
+	solidObjects.erase(this);
 }
 
+#if STABLE_UPDATE
+void CSolidObject::StableSlowUpdate() {
+	stableCrushable = crushable;
+	stableCrushResistance = crushResistance;
+	stableHeight = height;
+	stableXSize = xsize;
+	stableZSize = zsize;
+	stableFrontDir = frontdir;
+	stableRightDir = rightdir;
+	stableUpDir = updir;
+	stableMass = mass;
+	stableRadius = radius;
+	stableBlocking = blocking;
+	stableIsUnderWater = isUnderWater;
+}
 
+void CSolidObject::StableUpdate(bool slow) {
+	if (slow)
+		StableSlowUpdate();
+	stablePos = pos;
+	stableMidPos = midPos;
+	stableSpeed = speed;
+	stableIsMoving = isMoving;
+}
+#endif
+
+void CSolidObject::UpdateStableData() {
+#if STABLE_UPDATE
+	int upd = gs->frameNum % 8;
+	for (std::set<CSolidObject *>::iterator i = solidObjects.begin(); i != solidObjects.end(); ++i) {
+		CSolidObject *s = *i;
+		s->StableUpdate((s->id % 8) == upd);
+	}
+#endif
+}
 
 void CSolidObject::UnBlock() {
 	if (isMarkedOnBlockingMap) {
@@ -234,4 +272,3 @@ void CSolidObject::Kill(const float3& impulse, bool crushKill) {
 	DamageArray damage;
 	DoDamage(damage * (health + 1.0f), impulse, NULL, -DAMAGE_EXTSOURCE_KILLED);
 }
-

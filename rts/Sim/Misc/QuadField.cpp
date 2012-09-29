@@ -213,6 +213,85 @@ std::vector<CUnit*> CQuadField::GetUnitsExact(const float3& pos, float radius, b
 	return units;
 }
 
+std::map<boost::int64_t, CUnit*> CQuadField::GetUnitsExactStable(const float3& pos, float radius)
+{
+	std::map<boost::int64_t, CUnit*> units;
+	const std::vector<int>& quads = GetQuads(pos, radius);
+
+	for (std::vector<int>::const_iterator q = quads.begin(); q != quads.end(); ++q) {
+		Quad& quad = baseQuads[*q];
+
+		for (std::list<CUnit*>::const_iterator i = quad.units.begin(); i != quad.units.end(); ++i) {
+			CUnit *u = *i;
+			if (units.find(u->GetSyncID()) != units.end())
+				continue;
+			const float totRad = radius + u->StableRadius();
+			if ((pos - u->StableMidPos()).SqLength() >= totRad * totRad)
+				continue;
+			units[u->GetSyncID()] = u;
+		}
+	}
+
+	return units;
+}
+
+std::map<boost::int64_t, CFeature*> CQuadField::GetFeaturesExactStable(const float3& pos, float radius)
+{
+	std::map<boost::int64_t, CFeature*> features;
+	const std::vector<int>& quads = GetQuads(pos, radius);
+
+	for (std::vector<int>::const_iterator q = quads.begin(); q != quads.end(); ++q) {
+		Quad& quad = baseQuads[*q];
+
+		for (std::list<CFeature*>::const_iterator i = quad.features.begin(); i != quad.features.end(); ++i) {
+			CFeature *f = *i;
+			if (features.find(f->GetSyncID()) != features.end())
+				continue;
+			const float totRad = radius + f->StableRadius();
+			if ((pos - f->StableMidPos()).SqLength() >= totRad * totRad)
+				continue;
+			features[f->GetSyncID()] = f;
+		}
+	}
+
+	return features;
+}
+
+std::map<boost::int64_t, CSolidObject*> CQuadField::GetSolidsExactStable(const float3& pos, float radius)
+{
+	std::map<boost::int64_t, CSolidObject*> solids;
+	const std::vector<int>& quads = GetQuads(pos, radius);
+
+	for (std::vector<int>::const_iterator q = quads.begin(); q != quads.end(); ++q) {
+		Quad& quad = baseQuads[*q];
+
+		for (std::list<CUnit*>::const_iterator i = quad.units.begin(); i != quad.units.end(); ++i) {
+			CUnit *u = *i;
+			if (!u->StableBlocking())
+				continue;
+			if (solids.find(u->GetSyncID()) != solids.end())
+				continue;
+			const float totRad = radius + u->StableRadius();
+			if ((pos - u->StableMidPos()).SqLength() >= totRad * totRad)
+				continue;
+			solids[u->GetSyncID()] = u;
+		}
+		for (std::list<CFeature*>::const_iterator i = quad.features.begin(); i != quad.features.end(); ++i) {
+			CFeature *f = *i;
+			if (!f->StableBlocking())
+				continue;
+			if (solids.find(f->GetSyncID()) != solids.end())
+				continue;
+			const float totRad = radius + f->StableRadius();
+			if ((pos - f->StableMidPos()).SqLength() >= totRad * totRad)
+				continue;
+			solids[f->GetSyncID()] = f;
+		}
+	}
+
+	return solids;
+}
+
 std::vector<CUnit*> CQuadField::GetUnitsExact(const float3& mins, const float3& maxs)
 {
 	GML_RECMUTEX_LOCK(qnum); // GetUnitsExact
@@ -403,6 +482,7 @@ unsigned int CQuadField::GetQuadsOnRay(float3 start, float3 dir, float length, i
 
 void CQuadField::MovedUnit(CUnit* unit)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	const std::vector<int>& newQuads = GetQuads(unit->pos, unit->radius);
 
 	// compare if the quads have changed, if not stop here
@@ -438,6 +518,7 @@ void CQuadField::MovedUnit(CUnit* unit)
 
 void CQuadField::RemoveUnit(CUnit* unit)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	GML_RECMUTEX_LOCK(quad); // RemoveUnit
 
 	std::vector<int>::const_iterator qi;
@@ -461,6 +542,7 @@ void CQuadField::RemoveUnit(CUnit* unit)
 
 void CQuadField::AddFeature(CFeature* feature)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	GML_RECMUTEX_LOCK(quad); // AddFeature
 
 	const std::vector<int>& newQuads = GetQuads(feature->pos, feature->radius);
@@ -473,6 +555,7 @@ void CQuadField::AddFeature(CFeature* feature)
 
 void CQuadField::RemoveFeature(CFeature* feature)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	GML_RECMUTEX_LOCK(quad); // RemoveFeature
 
 	const std::vector<int>& quads = GetQuads(feature->pos, feature->radius);
@@ -502,6 +585,7 @@ void CQuadField::RemoveFeature(CFeature* feature)
 
 void CQuadField::MovedProjectile(CProjectile* p)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	if (!p->synced)
 		return;
 
@@ -518,6 +602,7 @@ void CQuadField::MovedProjectile(CProjectile* p)
 
 void CQuadField::AddProjectile(CProjectile* p)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	assert(p->synced);
 
 	// projectiles are point-objects, so
@@ -537,6 +622,7 @@ void CQuadField::AddProjectile(CProjectile* p)
 
 void CQuadField::RemoveProjectile(CProjectile* p)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	assert(p->synced);
 
 	const int2& cellCoors = p->GetQuadFieldCellCoors();

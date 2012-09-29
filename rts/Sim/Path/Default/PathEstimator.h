@@ -10,6 +10,7 @@
 #include "IPath.h"
 #include "PathConstants.h"
 #include "PathDataTypes.h"
+#include "Sim/Objects/SolidObject.h"
 #include "System/float3.h"
 
 #include <boost/thread/thread.hpp>
@@ -82,6 +83,7 @@ public:
 		const CPathFinderDef& peDef,
 		IPath::Path& path,
 		unsigned int maxSearchedBlocks,
+		const CSolidObject *owner,
 		bool synced = true
 	);
 
@@ -111,6 +113,8 @@ public:
 	unsigned int GetNumBlocksZ() const { return nbrOfBlocksZ; }
 
 	PathNodeStateBuffer& GetNodeStateBuffer() { return blockStates; }
+
+	void MergePathCache();
 
 private:
 	void InitEstimator(const std::string& cacheFileName, const std::string& map);

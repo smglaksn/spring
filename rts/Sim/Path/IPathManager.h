@@ -7,6 +7,22 @@
 
 #include "PFSTypes.h"
 #include "System/float3.h"
+#include "System/Object.h"
+#include "System/Platform/Threading.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
+
+enum ThreadParam { THREAD_DUMMY };
+
+#if THREADED_PATH
+#define ST_FUNC ThreadParam dummy,
+#define ST_CALL THREAD_DUMMY,
+#define MT_WRAP
+#else
+#define ST_FUNC
+#define ST_CALL
+#define MT_WRAP ThreadParam dummy,
+#endif
 
 struct MoveDef;
 class CSolidObject;
@@ -15,20 +31,115 @@ class IPathManager {
 public:
 	static IPathManager* GetInstance(unsigned int type);
 
-	virtual ~IPathManager() {}
+	IPathManager();
+	virtual ~IPathManager();
+
+	virtual void MergePathCaches() = 0;
 
 	virtual unsigned int GetPathFinderType() const = 0;
 	virtual boost::uint32_t GetPathCheckSum() const { return 0; }
+
+	enum PathRequestType { PATH_NONE, REQUEST_PATH, NEXT_WAYPOINT, DELETE_PATH, UPDATE_PATH, TERRAIN_CHANGE, PATH_UPDATED };
+
+	struct ScopedDisableThreading {
+#if THREADED_PATH
+		bool oldThreading;
+		ScopedDisableThreading(bool sync = true) : oldThreading(Threading::threadedPath) { ASSERT_SINGLETHREADED_SIM(); extern IPathManager* pathManager; if (sync) pathManager->SynchronizeThread(); Threading::threadedPath = false; }
+		~ScopedDisableThreading() { Threading::threadedPath = oldThreading; }
+#else
+		ScopedDisableThreading(bool sync = true) {}
+#endif
+	};
 
 	/**
 	 * returns if a path was changed after RequestPath returned its pathID
 	 * this can happen eg. if a PathManager reacts to TerrainChange events
 	 * (by re-requesting affected paths without changing their ID's)
 	 */
-	virtual bool PathUpdated(unsigned int pathID) { return false; }
 
-	virtual void Update() {}
-	virtual void UpdatePath(const CSolidObject* owner, unsigned int pathID) {}
+	virtual bool PathUpdated(ST_FUNC unsigned int pathID) { return false; }
+	bool PathUpdated(MT_WRAP unsigned int pathID);
+
+	virtual void Update(ST_FUNC int unused = 0) {}
+	void Update(MT_WRAP int unused = 0) {
+		ScopedDisableThreading sdt;
+		Update(ST_CALL unused);
+	}
+
+	struct PathData {
+		PathData() : pathID(-1), nextWayPoint(ZeroVector), updated(false) {}
+		PathData(int pID, const float3& nwp) : pathID(pID), nextWayPoint(nwp), updated(false) {}
+		int pathID;
+		float3 nextWayPoint;
+		bool updated;
+	};
+
+	PathData* GetPathData(int cid) {
+		std::map<unsigned int, PathData>::iterator pit = pathInfos.find(cid);
+		return (pit == pathInfos.end()) ? NULL : &(pit->second);
+	}
+
+	bool IsFailPath(unsigned int pathID) {
+#if !THREADED_PATH
+		return false;
+#endif
+		boost::mutex::scoped_lock preqLock(preqMutex);
+
+		PathData* p = GetPathData(pathID);
+		return (p == NULL) || (p->pathID == 0);
+	}
+
+	struct PathOpData {
+		PathOpData() : type(PATH_NONE), moveDef(NULL), startPos(ZeroVector), goalPos(ZeroVector), minDistance(0.0f), owner(NULL), synced(false), pathID(-1), numRetries(0) {}
+		PathOpData(PathRequestType tp, unsigned int pID, const MoveDef* md, const float3& sp, const float3& gp, float gr, const CSolidObject* own, bool sync):
+		type(tp), moveDef(md), startPos(sp), goalPos(gp), goalRadius(gr), owner(own), synced(sync), pathID(pID), numRetries(0) {}
+		PathOpData(PathRequestType tp, const CSolidObject* own, unsigned int pID):
+		type(tp), moveDef(NULL), startPos(ZeroVector), minDistance(0.0f), owner(own), synced(false), pathID(pID), numRetries(0) {}
+		PathOpData(PathRequestType tp, unsigned int pID):
+		type(tp), moveDef(NULL), startPos(ZeroVector), goalPos(ZeroVector), minDistance(0.0f), owner(NULL), synced(false), pathID(pID), numRetries(0) {}
+		PathOpData(PathRequestType tp, unsigned int pID, const float3& callPos, float minDist, int nRet, const CSolidObject* own, bool sync):
+		type(tp), moveDef(NULL), startPos(callPos), goalPos(ZeroVector), minDistance(minDist), owner(own), synced(sync), pathID(pID), numRetries(nRet) {}
+		PathOpData(PathRequestType tp, unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2):
+		type(tp), moveDef(NULL), startPos(ZeroVector), goalPos(ZeroVector), cx1(x1), cx2(x2), synced(false), cz1(z1), cz2(z2) {}
+
+		PathRequestType type;
+		const MoveDef* moveDef;
+		float3 startPos, goalPos;
+		union {
+			float goalRadius, minDistance;
+			int cx1;
+		};
+		union {
+			const CSolidObject* owner;
+			int cx2;
+		};
+		bool synced;
+		union {	int pathID, cz1; };
+		union { int numRetries, cz2; };
+	};
+
+	struct PathUpdateData {
+		PathUpdateData() : type(PATH_NONE), pathID(0), wayPoint(ZeroVector) {}
+		PathUpdateData(PathRequestType t) : type(t), pathID(0), wayPoint(ZeroVector) {}
+		PathUpdateData(PathRequestType t, unsigned int pID) : type(t), pathID(pID), wayPoint(ZeroVector) {}
+		PathUpdateData(PathRequestType t, const float3& wP) : type(t), pathID(0), wayPoint(wP) {}
+		PathUpdateData(PathRequestType t, const bool u) : type(t), updated(u), wayPoint(ZeroVector) {}
+		PathRequestType type;
+		union {
+			unsigned int pathID;
+			bool updated;
+		};
+		float3 wayPoint;
+	};
+
+	std::map<unsigned int, PathData> pathInfos;
+	std::vector<PathOpData> pathOps;
+	std::map<unsigned int, std::vector<PathUpdateData> > pathUpdates;
+	std::map<int, unsigned int> newPathCache;
+	static boost::thread *pathBatchThread;
+
+	virtual void UpdatePath(ST_FUNC const CSolidObject* owner, unsigned int pathID) {}
+	void UpdatePath(MT_WRAP const CSolidObject* owner, unsigned int pathID);
 
 	/**
 	 * When a path is no longer used, call this function to release it from
@@ -36,7 +147,8 @@ public:
 	 * @param pathID
 	 *     The path-id returned by RequestPath.
 	 */
-	virtual void DeletePath(unsigned int pathID) {}
+	virtual void DeletePath(ST_FUNC unsigned int pathID) {}
+	void DeletePath(MT_WRAP unsigned int pathID);
 
 	/**
 	 * Returns the next waypoint of the path.
@@ -52,8 +164,8 @@ public:
 	 *     and the returned waypoint.
 	 * @param numRetries
 	 *     Dont set this, used internally
-	 * @param owner
-	 *     The the unit the path is used for, or NULL.
+	 * @param ownerId
+	 *     The id of the unit the path is used for, or 0.
 	 * @param synced
 	 *     Whether this evaluation has to run synced or unsynced.
 	 *     If false, this call may not change any state of the path manager
@@ -64,14 +176,23 @@ public:
 	 *     waypoint could be found.
 	 */
 	virtual float3 NextWayPoint(
+		ST_FUNC
 		unsigned int pathID,
 		float3 callerPos,
 		float minDistance = 0.0f,
 		int numRetries = 0,
-		const CSolidObject* owner = NULL,
+		const CSolidObject *owner = NULL,
 		bool synced = true
 	) { return ZeroVector; }
-
+	float3 NextWayPoint(
+		MT_WRAP
+		unsigned int pathID,
+		float3 callerPos,
+		float minDistance = 0.0f,
+		int numRetries = 0,
+		const CSolidObject *owner = NULL,
+		bool synced = true
+	);
 
 	/**
 	 * Returns all waypoints of a path. Different segments of a path might
@@ -90,10 +211,20 @@ public:
 	 *     The list of starting indices for the different resolutions
 	 */
 	virtual void GetPathWayPoints(
+		ST_FUNC
 		unsigned int pathID,
 		std::vector<float3>& points,
 		std::vector<int>& starts
 	) const {}
+	void GetPathWayPoints(
+		MT_WRAP
+		unsigned int pathID,
+		std::vector<float3>& points,
+		std::vector<int>& starts
+	) {
+		ScopedDisableThreading sdt;
+		return GetPathWayPoints(ST_CALL pathID, points, starts);
+	}
 
 
 	/**
@@ -125,6 +256,7 @@ public:
 	 *     could be found
 	 */
 	virtual unsigned int RequestPath(
+		ST_FUNC
 		const MoveDef* moveDef,
 		const float3& startPos,
 		const float3& goalPos,
@@ -132,6 +264,21 @@ public:
 		CSolidObject* caller = 0,
 		bool synced = true
 	) { return 0; }
+	unsigned int RequestPath(
+		MT_WRAP
+		const MoveDef* moveDef,
+		const float3& startPos,
+		const float3& goalPos,
+		float goalRadius = 8.0f,
+		CSolidObject* caller = 0,
+		bool synced = true
+	);
+
+	int GetPathID(int cid);
+
+	void ThreadFunc();
+
+	void SynchronizeThread();
 
 	/**
 	 * Whenever there are any changes in the terrain
@@ -150,12 +297,41 @@ public:
 	 *     Second corners Z-axis value, defining the rectangular area
 	 *     affected by the changes.
 	 */
-	virtual void TerrainChange(unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2) {}
+	virtual void TerrainChange(ST_FUNC unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2) {}
+	void TerrainChange(MT_WRAP unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2) {
+		ScopedDisableThreading sdt;
+		TerrainChange(ST_CALL x1, z1 ,x2, z2);
+	}
 
-	virtual bool SetNodeExtraCosts(const float* costs, unsigned int sizex, unsigned int sizez, bool synced) { return false; }
-	virtual bool SetNodeExtraCost(unsigned int x, unsigned int z, float cost, bool synced) { return false; }
-	virtual float GetNodeExtraCost(unsigned int x, unsigned int z, bool synced) const { return 0.0f; }
-	virtual const float* GetNodeExtraCosts(bool synced) const { return NULL; }
+	virtual bool SetNodeExtraCosts(ST_FUNC const float* costs, unsigned int sizex, unsigned int sizez, bool synced) { return false; }
+	bool SetNodeExtraCosts(MT_WRAP const float* costs, unsigned int sizex, unsigned int sizez, bool synced) {
+		ScopedDisableThreading sdt;
+		return SetNodeExtraCosts(ST_CALL costs, sizex, sizez, synced);
+	}
+
+	virtual bool SetNodeExtraCost(ST_FUNC unsigned int x, unsigned int z, float cost, bool synced) { return false; }
+	bool SetNodeExtraCost(MT_WRAP unsigned int x, unsigned int z, float cost, bool synced) {
+		ScopedDisableThreading sdt;
+		return SetNodeExtraCost(ST_CALL x, z, cost, synced);
+	}
+
+	virtual float GetNodeExtraCost(ST_FUNC unsigned int x, unsigned int z, bool synced) const { return 0.0f; }
+	float GetNodeExtraCost(MT_WRAP unsigned int x, unsigned int z, bool synced) {
+		ScopedDisableThreading sdt;
+		return GetNodeExtraCost(ST_CALL x, z, synced);
+	}
+
+	virtual const float* GetNodeExtraCosts(ST_FUNC bool synced) const { return NULL; }
+	const float* GetNodeExtraCosts(MT_WRAP bool synced) {
+		ScopedDisableThreading sdt;
+		return GetNodeExtraCosts(ST_CALL synced);
+	}
+
+	unsigned int pathRequestID;
+	boost::mutex preqMutex;
+	bool wait;
+	boost::condition_variable cond;
+	volatile bool stopThread;
 };
 
 extern IPathManager* pathManager;

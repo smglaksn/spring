@@ -6,8 +6,11 @@
 #include "WorldObject.h"
 #include "System/Vec2.h"
 #include "System/Misc/BitwiseEnum.h"
+#include "System/Platform/Threading.h"
 #include "System/Sync/SyncedFloat3.h"
 #include "System/Sync/SyncedPrimitive.h"
+#include <deque>
+
 
 struct CollisionVolume;
 struct SolidObjectDef;
@@ -51,6 +54,62 @@ public:
 		DAMAGE_EXTSOURCE_FIRE   = 4,
 		DAMAGE_EXTSOURCE_WATER  = 5, // lava/acid/etc
 		DAMAGE_EXTSOURCE_KILLED = 6,
+	};
+	enum DelayOpType {
+		SCRIPT_STOPMOVING,
+		SCRIPT_STARTMOVING,
+		SCRIPT_LANDED,
+		SCRIPT_MOVERATE,
+		CAI_SLOWUPDATE,
+		CAI_STOPMOVE,
+		FAIL,
+		ACTIVATE,
+		DEACTIVATE,
+		BLOCK,
+		UNBLOCK,
+		UNITUNIT_COLLISION,
+		UNITFEAT_COLLISION,
+		BUGGEROFF,
+		KILLUNIT,
+		MOVE,
+		UNRESERVEPAD,
+		CHECKNOTIFY,
+		MOVE_FEATURE,
+		MOVE_UNIT,
+		DODAMAGE,
+		CHANGE_SPEED,
+		KILL,
+		SET_SKIDDING,
+		UPDATE_MIDAIMPOS,
+		ADDBUILDPOWER,
+		GETAIRBASEPIECEPOS,
+		MOVE_UNIT_OLDPOS
+	};
+	struct DelayOp {
+		DelayOp(DelayOpType t) : type(t), obj(NULL), vec(ZeroVector), damage(0.0f), dmgtype(0) {}
+		DelayOp(DelayOpType t, const CSolidObject *o) : type(t), obj(o), vec(ZeroVector), damage(0.0f), dmgtype(0) {}
+		DelayOp(DelayOpType t, const CSolidObject *o, bool bs) : type(t), obj(o), vec(ZeroVector), bset(bs), dmgtype(0) {}
+		DelayOp(DelayOpType t, int d) : type(t), data(d), vec(ZeroVector), damage(0.0f), dmgtype(0) {}
+		DelayOp(DelayOpType t, const CSolidObject *o, const float3& v) : type(t), obj(o), vec(v), damage(0.0f), dmgtype(0) {}
+		DelayOp(DelayOpType t, const CSolidObject *o, const float3& v, bool rel, bool tc) : type(t), obj(o), vec(v), relative(rel), terrcheck(tc) {}
+		DelayOp(DelayOpType t, const CSolidObject *o, bool crs, const float3& v) : type(t), obj(o), vec(v), crush(crs), dmgtype(0) {}
+		DelayOp(DelayOpType t, const CSolidObject *o, float dmg, const float3& impulse, int dt) : type(t), obj(o), vec(impulse), damage(dmg), dmgtype(dt) {}
+		DelayOp(DelayOpType t, const CSolidObject *o, const float3& add, float mul) : type(t), obj(o), vec(add), mult(mul), dmgtype(0) {}
+		DelayOp(DelayOpType t, float amt, const CSolidObject *o) : type(t), obj(o), vec(ZeroVector), amount(amt), dmgtype(0) {}
+		DelayOpType type;
+		union {
+			const CSolidObject *obj;
+			int data;
+		};
+		float3 vec;
+		union {
+			float damage, mult, amount;
+			bool relative, crush, bset;
+		};
+		union {
+			int dmgtype;
+			bool terrcheck;
+		};
 	};
 
 	CSolidObject();
@@ -192,6 +251,67 @@ public:
 	const YardMapStatus* blockMap;              ///< Current (unrotated!) blockmap/yardmap of this object. 0 means no active yardmap => all blocked.
 	int buildFacing;                            ///< Orientation of footprint, 4 different states
 
+#if STABLE_UPDATE
+	bool stableBlocking;
+	float3 stablePos;
+	SyncedFloat3 stableMidPos;
+	float stableHeight;
+	bool stableIsUnderWater;
+	float stableRadius;
+	int stableXSize;
+	int stableZSize;
+	float stableMass;
+	SyncedFloat3 stableFrontDir;
+	SyncedFloat3 stableRightDir;
+	SyncedFloat3 stableUpDir;
+	float3 stableSpeed;
+	bool stableIsMoving;
+	bool stableCrushable;
+	float stableCrushResistance;
+	// shall return "stable" values, that do not suddenly change during a sim frame. (for multithreading purposes)
+	const bool StableBlocking() const { return stableBlocking; }
+	const float3& StablePos() const { return stablePos; }
+	const SyncedFloat3& StableMidPos() const { return stableMidPos; }
+	const float StableHeight() const { return stableHeight; }
+	const bool StableUnderWater() const { return stableIsUnderWater; }
+	const float StableRadius() const { return stableRadius; }
+	const int StableXSize() const { return stableXSize; }
+	const int StableZSize() const { return stableZSize; }
+	const float StableMass() const { return stableMass; }
+	const SyncedFloat3& StableFrontDir() const { return stableFrontDir; }
+	const SyncedFloat3& StableRightDir() const { return stableRightDir; }
+	const SyncedFloat3& StableUpDir() const { return stableUpDir; }
+	const float3& StableSpeed() const { return stableSpeed; }
+	const bool StableIsMoving() const { return stableIsMoving; }
+	const bool StableCrushable() const { return stableCrushable; }
+	const float StableCrushResistance() const { return stableCrushResistance; }
+	const bool StableImmobile() const { return immobile; } // is stable by itself
+
+	virtual void StableUpdate(bool slow);
+	void StableSlowUpdate();
+#else
+	const bool StableBlocking() const { return blocking; }
+	const float3& StablePos() const { return pos; }
+	const SyncedFloat3& StableMidPos() const { return midPos; }
+	const float StableHeight() const { return height; }
+	const bool StableUnderWater() const { return isUnderWater; }
+	const float StableRadius() const { return radius; }
+	const int StableXSize() const { return xsize; }
+	const int StableZSize() const { return zsize; }
+	const float StableMass() const { return mass; }
+	const SyncedFloat3& StableFrontDir() const { return frontdir; }
+	const SyncedFloat3& StableRightDir() const { return rightdir; }
+	const SyncedFloat3& StableUpDir() const { return updir; }
+	const float3& StableSpeed() const { return speed; }
+	const bool StableIsMoving() const { return isMoving; }
+	const bool StableCrushable() const { return crushable; }
+	const float StableCrushResistance() const { return crushResistance; }
+	const bool StableImmobile() const { return immobile; }
+#endif
+
+
+	std::deque<DelayOp> delayOps;
+
 	static const float DEFAULT_MASS;
 	static const float MINIMUM_MASS;
 	static const float MAXIMUM_MASS;
@@ -201,6 +321,8 @@ public:
 	// returns the object (command reference) id of the object currently being deleted,
 	// for units this equals unit->id, and for features feature->id + uh->MaxUnits()
 	static int GetDeletingRefID() { return deletingRefID; }
+	static std::set<CSolidObject *> solidObjects;
+	static void UpdateStableData();
 };
 
 #endif // SOLID_OBJECT_H

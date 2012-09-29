@@ -32,6 +32,8 @@ inline static const int GetObjectID(CSolidObject* obj)
 
 void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object)
 {
+	ASSERT_SINGLETHREADED_SIM();
+	ASSERT_NONTHREADED_PATH();
 	if (object->blockMap) {
 		AddGroundBlockingObject(object, YARDMAP_BLOCKED);
 		return;
@@ -72,6 +74,8 @@ void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object)
 
 void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object, const YardMapStatus& mask)
 {
+	ASSERT_SINGLETHREADED_SIM();
+	ASSERT_NONTHREADED_PATH();
 	GML_STDMUTEX_LOCK(block); // AddGroundBlockingObject
 
 	const int objID = GetObjectID(object);
@@ -112,6 +116,8 @@ void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object, con
 
 void CGroundBlockingObjectMap::RemoveGroundBlockingObject(CSolidObject* object)
 {
+	ASSERT_SINGLETHREADED_SIM();
+	ASSERT_NONTHREADED_PATH();
 	GML_STDMUTEX_LOCK(block); // RemoveGroundBlockingObject
 
 	const int objID = GetObjectID(object);
@@ -217,6 +223,7 @@ bool CGroundBlockingObjectMap::GroundBlocked(const float3& pos, CSolidObject* ig
   * When a factory opens up, for example.
   */
 void CGroundBlockingObjectMap::OpenBlockingYard(CSolidObject* object) {
+	IPathManager::ScopedDisableThreading std;
 	RemoveGroundBlockingObject(object);
 	AddGroundBlockingObject(object, YARDMAP_YARDFREE);
 }
@@ -226,6 +233,7 @@ void CGroundBlockingObjectMap::OpenBlockingYard(CSolidObject* object) {
   * When a factory closes, for example.
   */
 void CGroundBlockingObjectMap::CloseBlockingYard(CSolidObject* object) {
+	IPathManager::ScopedDisableThreading std;
 	RemoveGroundBlockingObject(object);
 	AddGroundBlockingObject(object, YARDMAP_YARDBLOCKED);
 }

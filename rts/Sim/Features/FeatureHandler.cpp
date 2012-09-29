@@ -9,6 +9,7 @@
 #include "Map/ReadMap.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/QuadField.h"
+#include "Sim/Path/IPathManager.h"
 #include "Sim/Units/CommandAI/BuilderCAI.h"
 #include "System/creg/STL_List.h"
 #include "System/EventHandler.h"
@@ -408,7 +409,18 @@ void CFeatureHandler::Update()
 	{
 		GML_STDMUTEX_LOCK(rfeat); // Update
 
-		if(!toBeRemoved.empty()) {
+		do {
+			if (toBeRemoved.empty() && updateFeatures.empty())
+				break;
+
+			IPathManager::ScopedDisableThreading sdt;
+
+			for (CFeatureSet::iterator i = updateFeatures.begin(); i != updateFeatures.end(); ++i) {
+				(*i)->ExecuteDelayOps();
+			}
+
+			if (toBeRemoved.empty())
+				break;
 
 			GML_RECMUTEX_LOCK(obj); // Update
 
@@ -424,6 +436,7 @@ void CFeatureHandler::Update()
 				CFeature* feature = GetFeature(toBeRemoved.back());
 				toBeRemoved.pop_back();
 				if (feature) {
+					feature->ExecuteDelayOps();
 					int delID = feature->id;
 					toBeFreedIDs.push_back(delID);
 					activeFeatures.erase(feature);
@@ -437,7 +450,7 @@ void CFeatureHandler::Update()
 					CSolidObject::SetDeletingRefID(-1);
 				}
 			}
-		}
+		} while (false);
 
 		eventHandler.UpdateFeatures();
 	}

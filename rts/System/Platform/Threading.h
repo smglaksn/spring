@@ -14,7 +14,11 @@
 #endif
 #include "System/Platform/Win/win32.h"
 #include <boost/cstdint.hpp>
+#include "lib/gml/gml_base.h"
+#include "System/Platform/ThreadingConfig.h"
 
+#define DEBUG_MULTITHREADED_SIM (1 && GML_ENABLE_SIM) // enable debug output, requires GML
+#define DEBUG_THREADED_PATH (1 && GML_ENABLE_SIM) // enable debug output, requires GML
 
 namespace Threading {
 	/**
@@ -63,6 +67,27 @@ namespace Threading {
 	void SetBatchThread(bool set);
 	bool IsBatchThread();
 
+#if MULTITHREADED_SIM
+	extern void MultiThreadSimErrorFunc();
+	extern void ThreadNotUnitOwnerErrorFunc();
+	#define ASSERT_SINGLETHREADED_SIM() do { if (DEBUG_MULTITHREADED_SIM && Threading::multiThreadedSim && (Threading::IsSimThread() || GML::ThreadNumber()>GML_MAX_NUM_THREADS)) Threading::MultiThreadSimErrorFunc(); } while(false)
+	#define ASSERT_THREAD_OWNS_UNIT() do { if (DEBUG_MULTITHREADED_SIM && Threading::multiThreadedSim && Threading::threadCurrentUnitIDs[GML::ThreadNumber()] != id) { Threading::ThreadNotUnitOwnerErrorFunc(); } } while (false)
+	inline void SetMultiThreadedSim(bool mts) { multiThreadedSim = mts; }
+	extern int threadCurrentUnitIDs[];
+	inline void SetThreadCurrentUnitID(int id) { if (DEBUG_MULTITHREADED_SIM) threadCurrentUnitIDs[GML::ThreadNumber()] = id; }
+#else
+	#define ASSERT_SINGLETHREADED_SIM()
+	#define ASSERT_THREAD_OWNS_UNIT()
+	inline void SetMultiThreadedSim(bool mts) {}
+	inline void SetThreadCurrentUnitID(int id) {}
+#endif
+#if THREADED_PATH
+	extern void NonThreadedPathErrorFunc();
+	#define ASSERT_NONTHREADED_PATH() do { if (DEBUG_THREADED_PATH && Threading::threadedPath) Threading::NonThreadedPathErrorFunc(); } while(false)
+	inline void SetThreadedPath(bool tp) { threadedPath = tp; }
+#else
+	inline void SetThreadedPath(bool tp) {}
+#endif
 
 	/**
 	 * Give the current thread a name (posix-only)
