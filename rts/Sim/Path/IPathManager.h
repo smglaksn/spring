@@ -164,8 +164,8 @@ public:
 	 *     and the returned waypoint.
 	 * @param numRetries
 	 *     Dont set this, used internally
-	 * @param ownerId
-	 *     The id of the unit the path is used for, or 0.
+	 * @param owner
+	 *     The unit the path is used for, or NULL.
 	 * @param synced
 	 *     Whether this evaluation has to run synced or unsynced.
 	 *     If false, this call may not change any state of the path manager
@@ -297,10 +297,10 @@ public:
 	 *     Second corners Z-axis value, defining the rectangular area
 	 *     affected by the changes.
 	 */
-	virtual void TerrainChange(ST_FUNC unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2) {}
-	void TerrainChange(MT_WRAP unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2) {
+	virtual void TerrainChange(ST_FUNC unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2, unsigned int type) {}
+	void TerrainChange(MT_WRAP unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2, unsigned int type) {
 		ScopedDisableThreading sdt;
-		TerrainChange(ST_CALL x1, z1 ,x2, z2);
+		TerrainChange(ST_CALL x1, z1 ,x2, z2, type);
 	}
 
 	virtual bool SetNodeExtraCosts(ST_FUNC const float* costs, unsigned int sizex, unsigned int sizez, bool synced) { return false; }

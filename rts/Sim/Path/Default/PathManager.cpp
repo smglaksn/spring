@@ -157,9 +157,23 @@ unsigned int CPathManager::RequestPath(
 		}
 	}
 
-	if (result == IPath::Ok || result == IPath::GoalOutOfRange) {
-		LowRes2MedRes(*newPath, startPos, caller, synced);
-		MedRes2MaxRes(*newPath, startPos, caller, synced);
+	if (result != IPath::Error) {
+		if (result != IPath::CantGetCloser) {
+			LowRes2MedRes(*newPath, startPos, caller, synced);
+			MedRes2MaxRes(*newPath, startPos, caller, synced);
+		} else {
+			// add one dummy waypoint so that the calling MoveType
+			// does not consider this request a failure, which can
+			// happen when startPos is very close to goalPos
+			//
+			// otherwise, code relying on MoveType::progressState
+			// (eg. BuilderCAI::MoveInBuildRange) would misbehave
+			// (eg. reject build orders)
+			if (newPath->maxResPath.path.empty()) {
+				newPath->maxResPath.path.push_back(startPos);
+				newPath->maxResPath.squares.push_back(int2(startPos.x / SQUARE_SIZE, startPos.z / SQUARE_SIZE));
+			}
+		}
 
 		newPath->searchResult = result;
 		pathID = Store(newPath);
@@ -374,7 +388,7 @@ void CPathManager::DeletePath(ST_FUNC unsigned int pathID) {
 
 
 // Tells estimators about changes in or on the map.
-void CPathManager::TerrainChange(ST_FUNC unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2) {
+void CPathManager::TerrainChange(ST_FUNC unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2, unsigned int /*type*/) {
 	ASSERT_SINGLETHREADED_SIM();
 	medResPE->MapChanged(x1, z1, x2, z2);
 	lowResPE->MapChanged(x1, z1, x2, z2);

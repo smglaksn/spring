@@ -164,6 +164,46 @@ public:
 	virtual bool ChangeTeam(int team, ChangeType type);
 	virtual void StopAttackingAllyTeam(int ally);
 
+	inline CTransportUnit* GetTransporter() const {
+		// In MT transporter may suddenly be changed to NULL by sim
+		return GML::SimEnabled() ? *(CTransportUnit * volatile *)&transporter : transporter;
+	}
+
+public:
+	virtual void KillUnit(bool SelfDestruct, bool reclaimed, CUnit* attacker, bool showDeathSequence = true);
+	virtual void LoadSave(CLoadSaveInterface* file, bool loading);
+	virtual void IncomingMissile(CMissileProjectile* missile);
+	void TempHoldFire();
+	void ReleaseTempHoldFire();
+	/// start this unit in free fall from parent unit
+	void Drop(const float3& parentPos, const float3& parentDir, CUnit* parent);
+	void PostLoad();
+
+protected:
+	void ChangeTeamReset();
+	void UpdateResources();
+	void UpdateLosStatus(int allyTeam);
+	float GetFlankingDamageBonus(const float3& attackDir);
+
+private:
+	static float expMultiplier;
+	static float expPowerScale;
+	static float expHealthScale;
+	static float expReloadScale;
+	static float expGrade;
+public:
+	static void  SetExpMultiplier(float value) { expMultiplier = value; }
+	static float GetExpMultiplier()     { return expMultiplier; }
+	static void  SetExpPowerScale(float value) { expPowerScale = value; }
+	static float GetExpPowerScale()     { return expPowerScale; }
+	static void  SetExpHealthScale(float value) { expHealthScale = value; }
+	static float GetExpHealthScale()     { return expHealthScale; }
+	static void  SetExpReloadScale(float value) { expReloadScale = value; }
+	static float GetExpReloadScale()     { return expReloadScale; }
+	static void  SetExpGrade(float value) { expGrade = value; }
+	static float GetExpGrade()     { return expGrade; }
+
+public:
 	const UnitDef* unitDef;
 	int unitDefID;
 
@@ -377,11 +417,6 @@ public:
 	/// if the unit is in it's 'on'-state
 	bool activated;
 
-	inline CTransportUnit* GetTransporter() const {
-		// In MT transporter may suddenly be changed to NULL by sim
-		return GML::SimEnabled() ? *(CTransportUnit * volatile *)&transporter : transporter;
-	}
-
 	bool crashing;
 	/// prevent damage from hitting an already dead unit (causing multi wreck etc)
 	bool isDead;
@@ -481,22 +516,6 @@ public:
 
 	unsigned lastUnitUpdate;
 
-protected:
-	void ChangeTeamReset();
-	void UpdateResources();
-	void UpdateLosStatus(int allyTeam);
-	float GetFlankingDamageBonus(const float3& attackDir);
-
-public:
-	virtual void KillUnit(bool SelfDestruct, bool reclaimed, CUnit* attacker, bool showDeathSequence = true);
-	virtual void LoadSave(CLoadSaveInterface* file, bool loading);
-	virtual void IncomingMissile(CMissileProjectile* missile);
-	void TempHoldFire();
-	void ReleaseTempHoldFire();
-	/// start this unit in free fall from parent unit
-	void Drop(const float3& parentPos, const float3& parentDir, CUnit* parent);
-	void PostLoad();
-
 #if STABLE_UPDATE
 	bool stableBlockEnemyPushing;
 	bool stableBeingBuilt;
@@ -551,27 +570,9 @@ public:
 	void QueGetAirBasePiecePos(CSolidObject *o, bool delay = Threading::multiThreadedSim);
 	void QueMoveUnitOldPos(CSolidObject *o, bool delay = Threading::multiThreadedSim);
 
-
 	int ExecuteDelayOps();
 
-public:
-	static void  SetExpMultiplier(float value) { expMultiplier = value; }
-	static float GetExpMultiplier()     { return expMultiplier; }
-	static void  SetExpPowerScale(float value) { expPowerScale = value; }
-	static float GetExpPowerScale()     { return expPowerScale; }
-	static void  SetExpHealthScale(float value) { expHealthScale = value; }
-	static float GetExpHealthScale()     { return expHealthScale; }
-	static void  SetExpReloadScale(float value) { expReloadScale = value; }
-	static float GetExpReloadScale()     { return expReloadScale; }
-	static void  SetExpGrade(float value) { expGrade = value; }
-	static float GetExpGrade()     { return expGrade; }
-
 private:
-	static float expMultiplier;
-	static float expPowerScale;
-	static float expHealthScale;
-	static float expReloadScale;
-	static float expGrade;
 	/// if we are stunned by a weapon or for other reason, access via IsStunned/SetStunned(bool)
 	bool stunned;
 };

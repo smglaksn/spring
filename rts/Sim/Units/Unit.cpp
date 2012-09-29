@@ -970,14 +970,12 @@ void CUnit::SlowUpdate()
 	AddEnergy(energyTickMake * 0.5f);
 
 	if (health < maxHealth) {
-		health += unitDef->autoHeal;
-
 		if (restTime > unitDef->idleTime) {
 			health += unitDef->idleAutoHeal;
 		}
-		if (health > maxHealth) {
-			health = maxHealth;
-		}
+
+		health += unitDef->autoHeal;
+		health = std::min(health, maxHealth);
 	}
 
 	SlowUpdateCloak(false);
@@ -1130,7 +1128,7 @@ void CUnit::DoWaterDamage()
 
 void CUnit::DoDamage(const DamageArray& damages, const float3& impulse, CUnit* attacker, int weaponDefID)
 {
-	if (isDead) {
+	if (isDead || crashing) {
 		return;
 	}
 
@@ -1148,11 +1146,13 @@ void CUnit::DoDamage(const DamageArray& damages, const float3& impulse, CUnit* a
 		restTime = 0; // bleeding != resting
 	}
 
-	float3 hitDir = -impulse;
-	hitDir.y = 0.0f;
-	hitDir.SafeNormalize();
+	{
+		float3 hitDir = -impulse;
+		hitDir.y = 0.0f;
+		hitDir.SafeNormalize();
 
-	script->HitByWeapon(hitDir, weaponDefID, /*inout*/ damage);
+		script->HitByWeapon(hitDir, weaponDefID, /*inout*/ damage);
+	}
 
 	float experienceMod = expMultiplier;
 	float newDamage = damage;
@@ -1230,15 +1230,7 @@ void CUnit::DoDamage(const DamageArray& damages, const float3& impulse, CUnit* a
 		}
 	}
 
-	if (damage > 0.0f) {
-		recentDamage += damage;
-
-		if ((attacker != NULL) && !teamHandler->Ally(allyteam, attacker->allyteam)) {
-			attacker->AddExperience(0.1f * experienceMod
-			                             * (power / attacker->power)
-			                             * (damage + std::min(0.0f, health)) / maxHealth);
-		}
-	}
+	recentDamage += damage;
 
 	eventHandler.UnitDamaged(this, attacker, damage, weaponDefID, isParalyzer);
 	eoh->UnitDamaged(*this, attacker, damage, weaponDefID, isParalyzer);
@@ -1247,6 +1239,18 @@ void CUnit::DoDamage(const DamageArray& damages, const float3& impulse, CUnit* a
 	tracefile << "Damage: ";
 	tracefile << id << " " << damage << "\n";
 #endif
+
+	if (damage > 0.0f) {
+		if ((attacker != NULL) && !teamHandler->Ally(allyteam, attacker->allyteam)) {
+			const float scaledExpMod = 0.1f * experienceMod * (power / attacker->power);
+			const float scaledDamage = std::max(0.0f, (damage + std::min(0.0f, health))) / maxHealth;
+			// alternative
+			// scaledDamage = (max(healthPreDamage, 0) - max(health, 0)) / maxHealth
+
+			// FIXME: why is experience added a second time when health <= 0.0f?
+			attacker->AddExperience(scaledExpMod * scaledDamage);
+		}
+	}
 
 	if (health <= 0.0f) {
 		KillUnit(false, false, attacker);
@@ -1794,7 +1798,7 @@ bool CUnit::AddBuildPower(float amount, CUnit* builder)
 			return true;
 		}
 	} else { // reclaim
-		if (isDead) {
+		if (isDead || crashing) {
 			return false;
 		}
 
@@ -2418,11 +2422,11 @@ void CUnit::QueMoveUnit(CSolidObject *o, const float3& vec, bool rel, bool terrc
 		ASSERT_THREAD_OWNS_UNIT();
 		delayOps.push_back(DelayOp(MOVE_UNIT, o, vec, rel, terrcheck));
 	} else {
-		#define IMPASSABLE(md, mm, pos, u)                                         \
-			(((mm->IsBlocked(*md, pos, u) & CMoveMath::BLOCK_STRUCTURE) != 0) ||   \
-			 ((mm->GetPosSpeedMod(*md, pos) <= 0.01f)))
-				const CUnit *u = static_cast<const CUnit *>(o);
-		if (!terrcheck || !IMPASSABLE(u->moveDef, u->moveDef->moveMath, rel ? u->pos + vec : vec, u))
+		#define POS_IMPASSABLE(md, pos, u)                                               \
+			(((CMoveMath::IsBlocked(*md, pos, u) & CMoveMath::BLOCK_STRUCTURE) != 0) ||  \
+			 ((CMoveMath::GetPosSpeedMod(*md, pos) <= 0.01f)))
+		const CUnit *u = static_cast<const CUnit *>(o);
+		if (!terrcheck || !POS_IMPASSABLE(u->moveDef, rel ? u->pos + vec : vec, u))
 			o->Move3D(vec, rel);
 	}
 }

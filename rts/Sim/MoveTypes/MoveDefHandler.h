@@ -10,7 +10,6 @@
 #include "Sim/Misc/GlobalConstants.h"
 
 class MoveDefHandler;
-class CMoveMath;
 class CSolidObject;
 class LuaTable;
 
@@ -109,8 +108,6 @@ struct MoveDef {
 	float heatMod;
 	/// heat produced by a path
 	int heatProduced;
-
-	CMoveMath* moveMath;
 };
 
 
@@ -128,10 +125,6 @@ public:
 	unsigned int GetCheckSum() const { return checksum; }
 
 private:
-	CMoveMath* groundMoveMath;
-	CMoveMath* hoverMoveMath;
-	CMoveMath* seaMoveMath;
-
 	unsigned int checksum;
 };
 

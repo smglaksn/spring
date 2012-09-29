@@ -15,7 +15,6 @@ class CPathFinder;
 class CPathEstimator;
 class CPathFinderDef;
 struct MoveDef;
-class CMoveMath;
 
 class CPathManager: public IPathManager {
 public:
@@ -73,7 +72,7 @@ public:
 
 	void GetPathWayPoints(ST_FUNC unsigned int pathID, std::vector<float3>& points, std::vector<int>& starts) const;
 
-	void TerrainChange(ST_FUNC unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2);
+	void TerrainChange(ST_FUNC unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2, unsigned int type);
 
 	bool SetNodeExtraCost(ST_FUNC unsigned int, unsigned int, float, bool);
 	bool SetNodeExtraCosts(ST_FUNC const float*, unsigned int, unsigned int, bool);

@@ -4,6 +4,7 @@
 #define SOLID_OBJECT_H
 
 #include "WorldObject.h"
+#include "Sim/MoveTypes/MoveDefHandler.h"
 #include "System/Vec2.h"
 #include "System/Misc/BitwiseEnum.h"
 #include "System/Platform/Threading.h"
@@ -19,6 +20,15 @@ struct SolidObjectGroundDecal;
 
 struct DamageArray;
 class CUnit;
+
+enum TerrainChangeTypes {
+	TERRAINCHANGE_DAMAGE_RECALCULATION = 0, // update after regular explosion or terraform event
+	TERRAINCHANGE_SQUARE_TYPEMAP_INDEX = 1, // update after typemap-index of a square changed (Lua)
+	TERRAINCHANGE_TYPEMAP_SPEED_VALUES = 2, // update after speed-values of a terrain-type changed (Lua)
+	TERRAINCHANGE_OBJECT_INSERTED      = 3,
+	TERRAINCHANGE_OBJECT_INSERTED_YM   = 4,
+	TERRAINCHANGE_OBJECT_DELETED       = 5,
+};
 
 enum YardmapStates {
 	YARDMAP_OPEN        = 0,    // always free      (    walkable      buildable)
@@ -165,7 +175,7 @@ public:
 	int2 GetMapPos() const { return (GetMapPos(pos)); }
 	int2 GetMapPos(const float3& position) const;
 
-	YardMapStatus GetGroundBlockingAtPos(float3 gpos) const;
+	YardMapStatus GetGroundBlockingMaskAtPos(float3 gpos) const;
 
 private:
 	void SetMidPos(const float3& mp, bool relative) {
@@ -268,6 +278,7 @@ public:
 	bool stableIsMoving;
 	bool stableCrushable;
 	float stableCrushResistance;
+	PhysicalState stablePhysicalState;
 	// shall return "stable" values, that do not suddenly change during a sim frame. (for multithreading purposes)
 	const bool StableBlocking() const { return stableBlocking; }
 	const float3& StablePos() const { return stablePos; }
@@ -286,6 +297,8 @@ public:
 	const bool StableCrushable() const { return stableCrushable; }
 	const float StableCrushResistance() const { return stableCrushResistance; }
 	const bool StableImmobile() const { return immobile; } // is stable by itself
+	const PhysicalState StablePhysicalState() const { return stablePhysicalState; }
+	const int StableAllyTeam() const { return allyteam; } // is stable by itself
 
 	virtual void StableUpdate(bool slow);
 	void StableSlowUpdate();
@@ -307,6 +320,8 @@ public:
 	const bool StableCrushable() const { return crushable; }
 	const float StableCrushResistance() const { return crushResistance; }
 	const bool StableImmobile() const { return immobile; }
+	const PhysicalState StablePhysicalState() const { return physicalState; }
+	const int StableAllyTeam() const { return allyteam; } // is stable by itself
 #endif
 
 

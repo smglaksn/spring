@@ -145,6 +145,7 @@ void CSolidObject::StableSlowUpdate() {
 	stableRadius = radius;
 	stableBlocking = blocking;
 	stableIsUnderWater = isUnderWater;
+	stablePhysicalState = physicalState;
 }
 
 void CSolidObject::StableUpdate(bool slow) {
@@ -191,7 +192,7 @@ void CSolidObject::Block() {
 }
 
 
-YardMapStatus CSolidObject::GetGroundBlockingAtPos(float3 gpos) const
+YardMapStatus CSolidObject::GetGroundBlockingMaskAtPos(float3 gpos) const
 {
 	if (!blockMap)
 		return YARDMAP_OPEN;
