@@ -522,6 +522,7 @@ public:
 	bool stableIsDead;
 	const CTransportUnit* stableTransporter;
 	bool stableStunned;
+	bool stableCommandQueEmpty;
 	// shall return "stable" values, that do not suddenly change during a sim frame. (for multithreading purposes)
 	const bool StableBlockEnemyPushing() const { return stableBlockEnemyPushing; }
 	const bool StableUsingScriptMoveType() const { return usingScriptMoveType; } // appears to be MT stable by itself
@@ -529,6 +530,7 @@ public:
 	const bool StableIsDead() const { return stableIsDead; }
 	const CTransportUnit* StableTransporter() const { return stableTransporter; }
 	const bool StableIsStunned() const { return stableStunned; }
+	const bool StableCommandQueEmpty() const { return stableCommandQueEmpty; }
 
 	virtual void StableUpdate(bool slow);
 	void StableSlowUpdate();
@@ -539,6 +541,7 @@ public:
 	const bool StableIsDead() const { return isDead; }
 	const CTransportUnit* StableTransporter() const { return transporter; }
 	const bool StableIsStunned() const { return stunned; }
+	const bool StableCommandQueEmpty() const { return commandAI->commandQue.empty(); }
 #endif
 
 	void QueScriptStopMoving(bool delay = Threading::multiThreadedSim);

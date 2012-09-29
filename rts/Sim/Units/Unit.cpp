@@ -2625,6 +2625,7 @@ void CUnit::StableSlowUpdate() {
 	stableBlockEnemyPushing = blockEnemyPushing;
 	stableBeingBuilt = beingBuilt;
 	stableStunned = stunned;
+	stableCommandQueEmpty = commandAI->commandQue.empty();
 	CSolidObject::StableSlowUpdate();
 	if (moveType)
 		moveType->StableSlowUpdate();

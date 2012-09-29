@@ -8,7 +8,6 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Objects/SolidObject.h"
 #include "Sim/Units/Unit.h"
-#include "Sim/Units/CommandAI/CommandAI.h"
 #include "System/mmgr.h"
 
 bool CMoveMath::noHoverWaterMove = false;
@@ -300,7 +299,7 @@ CMoveMath::BlockType CMoveMath::SquareIsBlocked(const MoveDef& moveDef, int xSqu
 				r |= BLOCK_MOVING;
 			} else {
 				CUnit& u = *static_cast<CUnit*>(obstacle);
-				if (!u.StableBeingBuilt() && u.commandAI->commandQue.empty()) {
+				if (!u.StableBeingBuilt() && u.StableCommandQueEmpty()) {
 					// idling mobile unit
 					r |= BLOCK_MOBILE;
 				} else {
