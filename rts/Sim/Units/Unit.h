@@ -570,7 +570,7 @@ public:
 	void QueSetSkidding(CSolidObject *o, bool bset, bool delay = Threading::multiThreadedSim);
 	void QueUpdateMidAndAimPos(CSolidObject *o, bool delay = Threading::multiThreadedSim);
 	void QueAddBuildPower(float amount, CSolidObject *o, bool delay = Threading::multiThreadedSim);
-	void QueGetAirBasePiecePos(CSolidObject *o, bool delay = Threading::multiThreadedSim);
+	void QueGetAirBasePadPos(CSolidObject *o, bool delay = Threading::multiThreadedSim);
 	void QueMoveUnitOldPos(CSolidObject *o, bool delay = Threading::multiThreadedSim);
 
 	int ExecuteDelayOps();

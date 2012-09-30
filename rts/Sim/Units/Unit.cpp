@@ -2488,15 +2488,22 @@ void CUnit::QueAddBuildPower(float amount, CSolidObject *o, bool delay) {
 	}
 }
 
-void CUnit::QueGetAirBasePiecePos(CSolidObject *o, bool delay) {
+void CUnit::QueGetAirBasePadPos(CSolidObject *o, bool delay) {
 	if (delay) {
 		ASSERT_THREAD_OWNS_UNIT();
-		delayOps.push_back(DelayOp(GETAIRBASEPIECEPOS, o));
+		delayOps.push_back(DelayOp(GETAIRBASEPADPOS, o));
 	} else {
 		AAirMoveType* mt = dynamic_cast<AAirMoveType*>(moveType);
-		CAirBaseHandler::LandingPad* lp = mt->GetReservedPad();
-		if (lp != NULL) {
-			mt->airBasePiecePos = lp->GetUnit()->script->GetPiecePos(lp->GetPiece());
+		if (mt != NULL) {
+			CAirBaseHandler::LandingPad* lp = mt->GetReservedPad();
+			if (lp != NULL) {
+				CUnit* airBase = lp->GetUnit();
+				const float3 relPadPos = airBase->script->GetPiecePos(lp->GetPiece());
+				mt->airBasePadPos = airBase->pos +
+					(airBase->frontdir * relPadPos.z) +
+					(airBase->updir    * relPadPos.y) +
+					(airBase->rightdir * relPadPos.x);
+			}
 		}
 	}
 }
@@ -2594,8 +2601,8 @@ int CUnit::ExecuteDelayOps() {
 			case ADDBUILDPOWER:
 				QueAddBuildPower(d.amount, const_cast<CSolidObject *>(d.obj), false);
 				break;
-			case GETAIRBASEPIECEPOS:
-				QueGetAirBasePiecePos(const_cast<CSolidObject *>(d.obj), false);
+			case GETAIRBASEPADPOS:
+				QueGetAirBasePadPos(const_cast<CSolidObject *>(d.obj), false);
 				break;
 			case MOVE_UNIT_OLDPOS:
 				QueMoveUnitOldPos(const_cast<CSolidObject *>(d.obj), false);

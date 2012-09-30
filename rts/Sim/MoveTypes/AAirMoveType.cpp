@@ -12,6 +12,8 @@
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/Scripts/UnitScript.h"
 
+#define INVALID_AIRBASE_POS -1000.0f
+
 CR_BIND_DERIVED_INTERFACE(AAirMoveType, AMoveType);
 
 CR_REG_METADATA(AAirMoveType, (
@@ -24,7 +26,7 @@ CR_REG_METADATA(AAirMoveType, (
 	CR_MEMBER(collide),
 	CR_MEMBER(useSmoothMesh),
 	CR_MEMBER(autoLand),
-	CR_MEMBER(airBasePiecePos),
+	CR_MEMBER(airBasePadPos),
 
 	CR_MEMBER(lastColWarning),
 	CR_MEMBER(reservedPad),
@@ -49,7 +51,7 @@ AAirMoveType::AAirMoveType(CUnit* unit):
 	collide(true),
 	useSmoothMesh(false),
 	autoLand(true),
-	airBasePiecePos(ZeroVector),
+	airBasePadPos(INVALID_AIRBASE_POS, 0.0f, 0.0f),
 
 	lastColWarning(NULL),
 	reservedPad(NULL),
@@ -91,6 +93,7 @@ void AAirMoveType::ReservePad(CAirBaseHandler::LandingPad* lp) {
 
 	AddDeathDependence(lp, DEPENDENCE_LANDINGPAD);
 	SetGoal(lp->GetUnit()->pos);
+	airBasePadPos.x = INVALID_AIRBASE_POS;
 
 	reservedPad = lp;
 	padStatus = PAD_STATUS_FLYING;
@@ -275,21 +278,18 @@ bool AAirMoveType::MoveToRepairPad() {
 		DependentDied(airBase);
 		return false;
 	} else {
-		owner->QueGetAirBasePiecePos(airBase);
-		const float3& relPadPos = airBasePiecePos;
-		const float3 absPadPos = airBase->StablePos() +
-			(airBase->StableFrontDir() * relPadPos.z) +
-			(airBase->StableUpDir()    * relPadPos.y) +
-			(airBase->StableRightDir() * relPadPos.x);
+		owner->QueGetAirBasePadPos(airBase);
+		if (airBasePadPos.x == INVALID_AIRBASE_POS)
+			return true;
 
 		if (padStatus == PAD_STATUS_FLYING) {
 			if (aircraftState != AIRCRAFT_FLYING && aircraftState != AIRCRAFT_TAKEOFF) {
 				SetState(AIRCRAFT_FLYING);
 			}
 
-			goalPos = absPadPos;
+			goalPos = airBasePadPos;
 
-			if (absPadPos.SqDistance2D(owner->pos) < (400.0f * 400.0f)) {
+			if (airBasePadPos.SqDistance2D(owner->pos) < (400.0f * 400.0f)) {
 				padStatus = PAD_STATUS_LANDING;
 			}
 		} else if (padStatus == PAD_STATUS_LANDING) {
@@ -298,11 +298,11 @@ bool AAirMoveType::MoveToRepairPad() {
 			if (aircraftState != landingState)
 				SetState(landingState);
 
-			goalPos = absPadPos;
-			reservedLandingPos = absPadPos;
-			wantedHeight = absPadPos.y - ground->GetHeightAboveWater(absPadPos.x, absPadPos.z);
+			goalPos = airBasePadPos;
+			reservedLandingPos = airBasePadPos;
+			wantedHeight = airBasePadPos.y - ground->GetHeightAboveWater(airBasePadPos.x, airBasePadPos.z);
 
-			const float curPadDistanceSq = owner->midPos.SqDistance(absPadPos);
+			const float curPadDistanceSq = owner->midPos.SqDistance(airBasePadPos);
 			const float minPadDistanceSq = owner->radius * owner->radius;
 
 			if (curPadDistanceSq < minPadDistanceSq || aircraftState == AIRCRAFT_LANDED) {
@@ -315,7 +315,7 @@ bool AAirMoveType::MoveToRepairPad() {
 				SetState(AIRCRAFT_LANDED);
 			}
 
-			owner->pos = absPadPos;
+			owner->pos = airBasePadPos;
 
 			owner->UpdateMidAndAimPos(); // needed here?
 			owner->QueAddBuildPower(airBase->unitDef->buildSpeed / GAME_SPEED, airBase);
@@ -328,6 +328,7 @@ bool AAirMoveType::MoveToRepairPad() {
 				owner->QueUnreservePad();
 			}
 		}
+		airBasePadPos.x = INVALID_AIRBASE_POS;
 	}
 
 	return true;
