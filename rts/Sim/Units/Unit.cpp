@@ -2484,7 +2484,7 @@ void CUnit::QueAddBuildPower(float amount, CSolidObject *o, bool delay) {
 		ASSERT_THREAD_OWNS_UNIT();
 		delayOps.push_back(DelayOp(ADDBUILDPOWER, amount, o));
 	} else {
-		o->AddBuildPower(amount, static_cast<CUnit *>(o));
+		AddBuildPower(amount, static_cast<CUnit *>(o));
 	}
 }
 
