@@ -267,7 +267,6 @@ boost::mutex ntexmutex;
 boost::mutex catmutex;
 boost::mutex grpchgmutex;
 boost::mutex laycmdmutex;
-boost::mutex ddepmutex;
 
 #include <boost/thread/recursive_mutex.hpp>
 boost::recursive_mutex unitmutex;
