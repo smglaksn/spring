@@ -6,7 +6,10 @@
 #include "System/creg/STL_Set.h"
 #include "System/Log/ILog.h"
 #include "System/Platform/CrashHandler.h"
-#include "lib/gml/gmlmut.h"
+#if MULTITHREADED_SIM
+#include <boost/thread/mutex.hpp>
+boost::mutex depMutex;
+#endif
 
 #ifndef USE_MMGR
 # define m_setOwner(file, line, func)
@@ -153,7 +156,7 @@ void CObject::DependentDied(CObject* obj)
 void CObject::AddDeathDependence(CObject* obj, DependenceType dep)
 {
 #if MULTITHREADED_SIM
-	GML_STDMUTEX_LOCK(ddep); // AddDeathDependence
+	boost::mutex::scoped_lock depLock(depMutex); // AddDeathDependence
 #endif
 	assert(!detached);
 	m_setOwner(__FILE__, __LINE__, __FUNCTION__);
@@ -168,7 +171,7 @@ void CObject::AddDeathDependence(CObject* obj, DependenceType dep)
 void CObject::DeleteDeathDependence(CObject* obj, DependenceType dep)
 {
 #if MULTITHREADED_SIM
-	GML_STDMUTEX_LOCK(ddep); // DeleteDeathDependence
+	boost::mutex::scoped_lock depLock(depMutex); // DeleteDeathDependence
 #endif
 	assert(!detached);
 	m_setOwner(__FILE__, __LINE__, __FUNCTION__);
