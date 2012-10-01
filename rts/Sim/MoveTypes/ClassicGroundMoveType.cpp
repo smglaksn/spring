@@ -18,6 +18,27 @@
  * This code also does NOT work with QTPFS, nor will it EVER be adapted to.
  */
 
+/* IMPORTANT NOTICE: The moveType Update() is multithreaded!
+ * All functions, except those starting with ASSERT_SINGLETHREADED_SIM() must be
+ * designed to meet multithreading standards in order not to crash/desync. This means you are
+ * not allowed to modify any data that could be read by the moveType Update() of another unit.
+ * What does this mean in practice?
+ *
+ * SAFE TO DO:
+ * Read data from "owner"
+ * Modify immediate data of "owner" (there are few exceptions such as owner->commandAI->commandQue).
+ * Delayed blocking of "owner" via owner->QueBlock() and owner->QueUnBlock()
+ * Reading "stable" data from solidobjects other than "owner", via e.g. object->StablePos()
+ * Delayed modification of solidobjects other than "owner", via e.g. owner->QueMoveUnit(unit, ...)
+ * Obtaining solidobjects from the QuadField via "stable" functions (named qf->XXXStable)
+ *
+ * UNSAFE TO DO (with the above exceptions):
+ * Read/modify data of solidobjects other than "owner"
+ * Direct blocking via Block() and UnBlock()
+ * Read/modify the QuadField
+ * Invoke any function that contains ASSERT_SINGLETHREADED_SIM() (e.g. SlowUpdate)
+ */
+
 #include "ClassicGroundMoveType.h"
 
 #define CLASSIC_GROUNDMOVETYPE_ENABLED
