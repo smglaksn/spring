@@ -9,6 +9,7 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/CollisionVolume.h"
+#include "Sim/Objects/SolidObject.h"
 
 static void GetRectangleCollisionVolume(const QTPFS::PathRectangle& r, CollisionVolume& v, float3& rm) {
 	float3 vScales;
@@ -73,6 +74,10 @@ void QTPFS::PathCache::AddTempPath(IPath* path) {
 	assert(tempPaths.find(path->GetID()) == tempPaths.end());
 	assert(livePaths.find(path->GetID()) == livePaths.end());
 
+	if (Threading::multiThreadedSim) {
+		newTempPaths[path->GetOwner()->id].push_back(path);
+		return;
+	}
 	tempPaths.insert(std::make_pair<unsigned int, IPath*>(path->GetID(), path));
 }
 
@@ -84,13 +89,43 @@ void QTPFS::PathCache::AddLivePath(IPath* path) {
 	assert(livePaths.find(path->GetID()) == livePaths.end());
 	assert(deadPaths.find(path->GetID()) == deadPaths.end());
 
+	if (Threading::multiThreadedSim) {
+		newLivePaths[path->GetOwner()->id].push_back(path);
+		return;
+	}
 	// promote a path from temporary- to live-status (no deletion)
 	tempPaths.erase(path->GetID());
 	livePaths.insert(std::make_pair<unsigned int, IPath*>(path->GetID(), path));
 }
 
 void QTPFS::PathCache::Merge() {
-	// MT PROBLEM FIXME
+#if MULTITHREADED_SIM
+	for (std::map<int, std::vector<IPath*> >::iterator i = newTempPaths.begin(); i != newTempPaths.end(); ++i) {
+		for (std::vector<IPath*>::iterator p = i->second.begin(); p != i->second.end(); ++p) {
+			AddTempPath(*p);
+		}
+	}
+	newTempPaths.clear();
+	for (std::map<int, std::vector<IPath*> >::iterator i = newLivePaths.begin(); i != newLivePaths.end(); ++i) {
+		for (std::vector<IPath*>::iterator p = i->second.begin(); p != i->second.end(); ++p) {
+			AddLivePath(*p);
+		}
+	}
+	newLivePaths.clear();
+	for (std::map<int, std::vector<IPath*> >::iterator i = newDeadPaths.begin(); i != newDeadPaths.end(); ++i) {
+		for (std::vector<IPath*>::iterator p = i->second.begin(); p != i->second.end(); ++p) {
+			livePaths.erase((*p)->GetID());
+			deadPaths.insert(std::make_pair<unsigned int, IPath*>((*p)->GetID(), *p));
+		}
+	}
+	newDeadPaths.clear();
+	for (std::map<int, std::vector<IPath*> >::iterator i = newDelPaths.begin(); i != newDelPaths.end(); ++i) {
+		for (std::vector<IPath*>::iterator p = i->second.begin(); p != i->second.end(); ++p) {
+			DelPath((*p)->GetID());
+		}
+	}
+	newDelPaths.clear();
+#endif
 }
 
 void QTPFS::PathCache::DelPath(unsigned int pathID) {
@@ -102,17 +137,29 @@ void QTPFS::PathCache::DelPath(unsigned int pathID) {
 	if ((it = tempPaths.find(pathID)) != tempPaths.end()) {
 		assert(livePaths.find(pathID) == livePaths.end());
 		assert(deadPaths.find(pathID) == deadPaths.end());
+		if (Threading::multiThreadedSim) {
+			newDelPaths[it->second->GetOwner()->id].push_back(it->second);
+			return;
+		}
 		delete (it->second);
 		tempPaths.erase(it);
 		return;
 	}
 	if ((it = livePaths.find(pathID)) != livePaths.end()) {
 		assert(deadPaths.find(pathID) == deadPaths.end());
+		if (Threading::multiThreadedSim) {
+			newDelPaths[it->second->GetOwner()->id].push_back(it->second);
+			return;
+		}
 		delete (it->second);
 		livePaths.erase(it);
 		return;
 	}
 	if ((it = deadPaths.find(pathID)) != deadPaths.end()) {
+		if (Threading::multiThreadedSim) {
+			newDelPaths[it->second->GetOwner()->id].push_back(it->second);
+			return;
+		}
 		delete (it->second);
 		deadPaths.erase(it);
 	}
@@ -187,8 +234,12 @@ bool QTPFS::PathCache::MarkDeadPaths(const QTPFS::PathRectangle& r) {
 			// remember the ID of each path affected by the deformation
 			if (havePointInRect || edgeCrossesRect) {
 				assert(tempPaths.find(path->GetID()) == tempPaths.end());
-				deadPaths.insert(std::make_pair<unsigned int, IPath*>(path->GetID(), path));
-				livePathIts.push_back(it);
+				if (Threading::multiThreadedSim) {
+					newDeadPaths[it->second->GetOwner()->id].push_back(it->second);
+				} else {
+					deadPaths.insert(std::make_pair<unsigned int, IPath*>(path->GetID(), path));
+					livePathIts.push_back(it);
+				}
 				break;
 			}
 		}
