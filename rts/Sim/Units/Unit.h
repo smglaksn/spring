@@ -550,6 +550,7 @@ public:
 	void QueScriptMoveRate(int rate, bool delay = Threading::multiThreadedSim);
 	void QueCAISlowUpdate(bool delay = Threading::multiThreadedSim);
 	void QueCAIStopMove(bool delay = Threading::multiThreadedSim);
+	void QueCAIGiveCommand(int cmd, bool delay = Threading::multiThreadedSim);
 	void QueFail(bool delay = Threading::multiThreadedSim);
 	void QueActivate(bool delay = Threading::multiThreadedSim);
 	void QueDeactivate(bool delay = Threading::multiThreadedSim);

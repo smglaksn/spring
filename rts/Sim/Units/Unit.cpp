@@ -2308,6 +2308,14 @@ void CUnit::QueCAIStopMove(bool delay) {
 		commandAI->StopMove();
 	}
 }
+void CUnit::QueCAIGiveCommand(int cmd, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(CAI_GIVECOMMAND, cmd));
+	} else {
+		commandAI->GiveCommand(Command(cmd));
+	}
+}
 void CUnit::QueFail(bool delay) {
 	if (delay) {
 		ASSERT_THREAD_OWNS_UNIT();
@@ -2540,6 +2548,9 @@ int CUnit::ExecuteDelayOps() {
 				break;
 			case CAI_STOPMOVE:
 				QueCAIStopMove(false);
+				break;
+			case CAI_GIVECOMMAND:
+				QueCAIGiveCommand(d.data, false);
 				break;
 			case FAIL:
 				QueFail(false);
