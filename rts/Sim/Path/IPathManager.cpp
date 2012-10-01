@@ -142,6 +142,21 @@ float3 IPathManager::NextWayPoint(
 }
 
 
+void IPathManager::GetPathWayPoints(
+	MT_WRAP
+	unsigned int pathID,
+	std::vector<float3>& points,
+	std::vector<int>& starts
+	) {
+		ScopedDisableThreading sdt;
+		boost::mutex::scoped_lock preqLock(preqMutex);
+		PathData* p = GetPathData(pathID);
+		if (p == NULL || p->pathID < 0)
+			return;
+		return GetPathWayPoints(ST_CALL pathID, points, starts);
+}
+
+
 unsigned int IPathManager::RequestPath(
 	MT_WRAP
 	const MoveDef* moveDef,

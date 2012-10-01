@@ -221,10 +221,7 @@ public:
 		unsigned int pathID,
 		std::vector<float3>& points,
 		std::vector<int>& starts
-	) {
-		ScopedDisableThreading sdt;
-		return GetPathWayPoints(ST_CALL pathID, points, starts);
-	}
+	);
 
 
 	/**
