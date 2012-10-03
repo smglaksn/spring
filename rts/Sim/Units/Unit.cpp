@@ -56,6 +56,7 @@
 #include "Sim/MoveTypes/AAirMoveType.h"
 #include "Sim/MoveTypes/ClassicGroundMoveType.h"
 #include "Sim/MoveTypes/ScriptMoveType.h"
+#include "Sim/Path/IPathManager.h"
 #include "Sim/Projectiles/FlareProjectile.h"
 #include "Sim/Projectiles/WeaponProjectiles/MissileProjectile.h"
 #include "Sim/Weapons/Weapon.h"
@@ -490,6 +491,7 @@ void CUnit::PostInit(const CUnit* builder)
 	blocking &= !(immobile && unitDef->canKamikaze);
 
 	if (blocking) {
+		IPathManager::ScopedDisableThreading sdt; // prevent units being built on top of each other :)
 		QueBlock();
 	}
 
