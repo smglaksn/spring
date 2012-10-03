@@ -301,18 +301,6 @@ bool CUnitDrawer::LoadModelShaders()
 }
 
 
-void CUnitDrawer::SunChanged(const float3& sunDir) {
-	if (advShading && shadowHandler->shadowsSupported && globalRendering->haveGLSL) {
-		const float3 factoredUnitSunColor = unitSunColor * sky->GetLight()->GetLightIntensity();
-
-		modelShaders[MODEL_SHADER_S3O_SHADOW]->Enable();
-		modelShaders[MODEL_SHADER_S3O_SHADOW]->SetUniform3fv(5, &sky->GetLight()->GetLightDir().x);
-		modelShaders[MODEL_SHADER_S3O_SHADOW]->SetUniform1f(12, sky->GetLight()->GetUnitShadowDensity());
-		modelShaders[MODEL_SHADER_S3O_SHADOW]->SetUniform3fv(11, &factoredUnitSunColor[0]);
-		modelShaders[MODEL_SHADER_S3O_SHADOW]->Disable();
-	}
-}
-
 
 void CUnitDrawer::SetUnitDrawDist(float dist)
 {
@@ -2207,6 +2195,134 @@ bool CUnitDrawer::ShowUnitBuildSquare(const BuildInfo& buildInfo, const std::vec
 
 
 
+inline const icon::CIconData* GetUnitIcon(const CUnit* unit) {
+	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
+	const unsigned short prevMask = (LOS_PREVLOS | LOS_CONTRADAR);
+
+	const UnitDef* unitDef = unit->unitDef;
+	const icon::CIconData* iconData = NULL;
+
+	// use the unit's custom icon if we can currently see it,
+	// or have seen it before and did not lose contact since
+	const bool unitVisible = ((losStatus & LOS_INLOS) || ((losStatus & LOS_INRADAR) && ((losStatus & prevMask) == prevMask)));
+
+	if (minimap->UseUnitIcons() && (unitVisible || gu->spectatingFullView)) {
+		iconData = unitDef->iconType.GetIconData();
+	} else {
+		if (losStatus & LOS_INRADAR) {
+			iconData = icon::iconHandler->GetDefaultIconData();
+		}
+	}
+
+	return iconData;
+}
+
+inline float GetUnitIconScale(const CUnit* unit) {
+	float scale = unit->myIcon->GetSize();
+
+	if (!minimap->UseUnitIcons())
+		return scale;
+	if (!unit->myIcon->GetRadiusAdjust())
+		return scale;
+
+	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
+	const unsigned short prevMask = (LOS_PREVLOS | LOS_CONTRADAR);
+	const bool unitVisible = ((losStatus & LOS_INLOS) || ((losStatus & LOS_INRADAR) && ((losStatus & prevMask) == prevMask)));
+
+	if ((unitVisible || gu->spectatingFullView)) {
+		scale *= (unit->radius / 30.0f);
+	}
+
+	return scale;
+}
+
+
+void CUnitDrawer::DrawUnitMiniMapIcon(const CUnit* unit, CVertexArray* va) const {
+	if (unit->noMinimap)
+		return;
+	if (unit->myIcon == NULL)
+		return;
+
+	const unsigned char defaultColor[4] = {255, 255, 255, 255};
+	const unsigned char* color = &defaultColor[0];
+
+	if (!unit->isSelected) {
+		if (minimap->UseSimpleColors()) {
+			if (unit->team == gu->myTeam) {
+				color = minimap->GetMyTeamIconColor();
+			} else if (teamHandler->Ally(gu->myAllyTeam, unit->allyteam)) {
+				color = minimap->GetAllyTeamIconColor();
+			} else {
+				color = minimap->GetEnemyTeamIconColor();
+			}
+		} else {
+			color = teamHandler->Team(unit->team)->color;
+		}
+	}
+
+	const float iconScale = GetUnitIconScale(unit);
+	const float3& iconPos = (!gu->spectatingFullView)?
+		helper->GetUnitErrorPos(unit, gu->myAllyTeam):
+		static_cast<float3>(unit->midPos);
+
+	const float iconSizeX = (iconScale * minimap->GetUnitSizeX());
+	const float iconSizeY = (iconScale * minimap->GetUnitSizeY());
+
+	const float x0 = iconPos.x - iconSizeX;
+	const float x1 = iconPos.x + iconSizeX;
+	const float y0 = iconPos.z - iconSizeY;
+	const float y1 = iconPos.z + iconSizeY;
+
+	unit->myIcon->DrawArray(va, x0, y0, x1, y1, color);
+}
+
+// TODO:
+//   UnitDrawer::DrawIcon was half-duplicate of MiniMap::DrawUnit&co
+//   the latter has been replaced by this, do the same for the former
+//   (mini-map icons and real-map radar icons are the same anyway)
+void CUnitDrawer::DrawUnitMiniMapIcons() const {
+	std::map<icon::CIconData*, std::set<const CUnit*> >::const_iterator iconIt;
+	std::set<const CUnit*>::const_iterator unitIt;
+
+	CVertexArray* va = GetVertexArray();
+
+	for (iconIt = unitsByIcon.begin(); iconIt != unitsByIcon.end(); ++iconIt) {
+		const icon::CIconData* icon = iconIt->first;
+		const std::set<const CUnit*>& units = iconIt->second;
+
+		if (icon == NULL)
+			continue;
+
+		va->Initialize();
+		va->EnlargeArrays(units.size() * 4, 0, VA_SIZE_2DTC);
+		icon->BindTexture();
+
+		for (unitIt = units.begin(); unitIt != units.end(); ++unitIt) {
+			assert((*unitIt)->myIcon == icon);
+			DrawUnitMiniMapIcon(*unitIt, va);
+		}
+
+		va->DrawArray2dTC(GL_QUADS);
+	}
+}
+
+void CUnitDrawer::UpdateUnitMiniMapIcon(const CUnit* unit, bool forced, bool killed) {
+	icon::CIconData* oldIcon = unit->myIcon;
+	icon::CIconData* newIcon = const_cast<icon::CIconData*>(GetUnitIcon(unit));
+
+	CUnit* u = const_cast<CUnit*>(unit);
+
+	if (!killed) {
+		if ((oldIcon != newIcon) || forced) {
+			unitsByIcon[oldIcon].erase(u);
+			unitsByIcon[newIcon].insert(u);
+		}
+	} else {
+		unitsByIcon[oldIcon].erase(u);
+	}
+
+	u->myIcon = killed? NULL: newIcon;
+}
 
 
 
@@ -2232,6 +2348,7 @@ void CUnitDrawer::RenderUnitCreated(const CUnit* u, int cloaked) {
 		}
 	}
 
+	UpdateUnitMiniMapIcon(u, false, false);
 	unsortedUnits.insert(unit);
 }
 
@@ -2280,6 +2397,7 @@ void CUnitDrawer::RenderUnitDestroyed(const CUnit* unit) {
 	drawStat.erase(u);
 #endif
 
+	UpdateUnitMiniMapIcon(unit, false, true);
 	SetUnitLODCount(u, 0);
 }
 
@@ -2324,6 +2442,8 @@ void CUnitDrawer::RenderUnitLOSChanged(const CUnit* unit, int allyTeam, int newS
 			unitRadarIcons[allyTeam].erase(u);
 		}
 	}
+
+	UpdateUnitMiniMapIcon(unit, false, false);
 }
 
 
@@ -2394,3 +2514,41 @@ void CUnitDrawer::SetUnitLODCount(CUnit* unit, unsigned int count)
 		unit->currentLOD = (count == 0) ? 0 : count - 1;
 #endif
 }
+
+
+
+
+
+
+
+
+
+void CUnitDrawer::PlayerChanged(int playerNum) {
+	if (playerNum != gu->myPlayerNum)
+		return;
+
+	std::map<icon::CIconData*, std::set<const CUnit*> >::iterator iconIt;
+	std::set<CUnit*>::const_iterator unitIt;
+
+	for (iconIt = unitsByIcon.begin(); iconIt != unitsByIcon.end(); ++iconIt) {
+		(iconIt->second).clear();
+	}
+
+	for (unitIt = unsortedUnits.begin(); unitIt != unsortedUnits.end(); ++unitIt) {
+		// force an erase (no-op) followed by an insert
+		UpdateUnitMiniMapIcon(*unitIt, true, false);
+	}
+}
+
+void CUnitDrawer::SunChanged(const float3& sunDir) {
+	if (advShading && shadowHandler->shadowsSupported && globalRendering->haveGLSL) {
+		const float3 factoredUnitSunColor = unitSunColor * sky->GetLight()->GetLightIntensity();
+
+		modelShaders[MODEL_SHADER_S3O_SHADOW]->Enable();
+		modelShaders[MODEL_SHADER_S3O_SHADOW]->SetUniform3fv(5, &sky->GetLight()->GetLightDir().x);
+		modelShaders[MODEL_SHADER_S3O_SHADOW]->SetUniform1f(12, sky->GetLight()->GetUnitShadowDensity());
+		modelShaders[MODEL_SHADER_S3O_SHADOW]->SetUniform3fv(11, &factoredUnitSunColor[0]);
+		modelShaders[MODEL_SHADER_S3O_SHADOW]->Disable();
+	}
+}
+

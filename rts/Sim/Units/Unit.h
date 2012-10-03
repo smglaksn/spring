@@ -35,6 +35,9 @@ struct LocalModel;
 struct LocalModelPiece;
 struct UnitDef;
 struct UnitTrackStruct;
+namespace icon {
+	class CIconData;
+}
 
 class CTransportUnit;
 
@@ -480,6 +483,7 @@ public:
 	int selfDCountdown;
 
 	UnitTrackStruct* myTrack;
+	icon::CIconData* myIcon;
 
 	std::list<CMissileProjectile*> incomingMissiles; //FIXME make std::set?
 	int lastFlareDrop;
