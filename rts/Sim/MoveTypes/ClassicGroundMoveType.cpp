@@ -33,10 +33,11 @@
  * Obtaining solidobjects from the QuadField via "stable" functions (named qf->XXXStable)
  *
  * UNSAFE TO DO (with the above exceptions):
- * Read/modify data of solidobjects other than "owner"
+ * Read/modify data (directly or by function invocation) of solidobjects other than "owner"
  * Direct blocking via Block() and UnBlock()
  * Read/modify the QuadField
  * Invoke any function that contains ASSERT_SINGLETHREADED_SIM() (e.g. SlowUpdate)
+ * Invoke any function that does not meet the above standards (typically via "owner" or its members)
  */
 
 #include "ClassicGroundMoveType.h"
