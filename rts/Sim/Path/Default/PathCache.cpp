@@ -61,7 +61,6 @@ void CPathCache::AddPath(IPath::Path* path, IPath::SearchResult result, int2 sta
 }
 
 void CPathCache::Merge() {
-#if MULTITHREADED_SIM
 	for (std::map<int, std::vector<CacheItem*> >::iterator i = newCachedPaths.begin(); i != newCachedPaths.end(); ++i) {
 		for (std::vector<CacheItem*>::iterator j = i->second.begin(); j != i->second.end(); ++j) {
 			CacheItem *ci = *j;
@@ -84,7 +83,6 @@ void CPathCache::Merge() {
 		}
 	}
 	newCachedPaths.clear();
-#endif
 }
 
 CPathCache::CacheItem* CPathCache::GetCachedPath(int2 startBlock,int2 goalBlock,float goalRadius,int pathType)

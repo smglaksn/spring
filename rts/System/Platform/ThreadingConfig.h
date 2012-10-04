@@ -4,7 +4,7 @@
 #define THREADINGCONFIG_H
 
 #define MULTITHREADED_SIM 1 // more than one sim thread, very dangerous sync wise but with enormous performance potential
-#define THREADED_PATH 1 // separate path manager thread running in asynchronous mode, offering a nice speedup
+#define THREADED_PATH (1 || MULTITHREADED_SIM) // separate path manager thread running in asynchronous mode, offering a nice speedup
 #define STABLE_UPDATE (MULTITHREADED_SIM || THREADED_PATH) // both these require stable data to avoid desyncs
 
 

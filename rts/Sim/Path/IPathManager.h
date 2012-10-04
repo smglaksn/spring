@@ -7,7 +7,6 @@
 
 #include "PFSTypes.h"
 #include "System/float3.h"
-#include "System/Object.h"
 #include "System/Platform/Threading.h"
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
@@ -29,7 +28,7 @@ class CSolidObject;
 
 class IPathManager {
 public:
-	static IPathManager* GetInstance(unsigned int type);
+	static IPathManager* GetInstance(unsigned int type, bool async);
 
 	IPathManager();
 	virtual ~IPathManager();
@@ -79,15 +78,7 @@ public:
 		return (pit == pathInfos.end()) ? NULL : &(pit->second);
 	}
 
-	bool IsFailPath(unsigned int pathID) {
-#if !THREADED_PATH
-		return false;
-#endif
-		boost::mutex::scoped_lock preqLock(preqMutex);
-
-		PathData* p = GetPathData(pathID);
-		return (p == NULL) || (p->pathID == 0);
-	}
+	bool IsFailPath(unsigned int pathID, bool async);
 
 	struct PathOpData {
 		PathOpData() : type(PATH_NONE), moveDef(NULL), startPos(ZeroVector), goalPos(ZeroVector), minDistance(0.0f), owner(NULL), synced(false), pathID(-1), numRetries(0) {}

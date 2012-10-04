@@ -214,8 +214,9 @@ void CBasicMapDamage::Update()
 {
 	SCOPED_TIMER("BasicMapDamage::Update");
 	if (!recalcAreas.empty()) {
+		recalcAreas.Optimize();
 		IPathManager::ScopedDisableThreading sdt;
-		for (std::vector<SRectangle>::const_iterator i = recalcAreas.cbegin(); i != recalcAreas.cend(); ++i) {
+		for (CRectangleOptimizer::iterator i = recalcAreas.begin(); i != recalcAreas.end(); ++i) {
 			const SRectangle& r = *i;
 			RecalcArea(r.x1, r.x2, r.z1, r.z2);
 		}

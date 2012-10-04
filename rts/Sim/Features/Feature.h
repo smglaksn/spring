@@ -113,10 +113,11 @@ public:
 	bool reachedFinalPos;
 
 #if STABLE_UPDATE
-	bool stableReachedFinalPos;
+	bool stableReachedFinalPos, *pStableReachedFinalPos;
 	// shall return "stable" values, that do not suddenly change during a sim frame. (for multithreading purposes)
-	bool StableReachedFinalPos() { return stableReachedFinalPos; }
+	bool StableReachedFinalPos() { return *pStableReachedFinalPos; }
 
+	void StableInit(bool stable);
 	virtual void StableUpdate(bool slow);
 	void StableSlowUpdate();
 #else

@@ -7,6 +7,7 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/HoverAirMoveType.h"
 #include "Sim/MoveTypes/GroundMoveType.h"
+#include "Sim/Path/IPathManager.h"
 #include "Sim/Units/Scripts/CobInstance.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/BuildInfo.h"
@@ -409,7 +410,10 @@ bool CTransportUnit::DetachUnitCore(CUnit* unit)
 bool CTransportUnit::DetachUnit(CUnit* unit)
 {
 	if (DetachUnitCore(unit)) {
-		unit->QueBlock();
+		{ // Don't unload units on top of each other
+			IPathManager::ScopedDisableThreading std;
+			unit->QueBlock();
+		}
 
 		// erase command queue unless it's a wait command
 		const CCommandQueue& queue = unit->commandAI->commandQue;

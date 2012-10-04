@@ -574,7 +574,7 @@ void CGame::PostLoadSimulation()
 	radarhandler = new CRadarHandler(false);
 
 	mapDamage = IMapDamage::GetMapDamage();
-	pathManager = IPathManager::GetInstance(modInfo.pathFinderSystem);
+	pathManager = IPathManager::GetInstance(modInfo.pathFinderSystem, modInfo.asyncPathFinder);
 
 	// load map-specific features after pathManager so it knows about them (via TerrainChange)
 	loadscreen->SetLoadMessage("Initializing Map Features");

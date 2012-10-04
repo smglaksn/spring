@@ -156,14 +156,53 @@ void CSolidObject::StableUpdate(bool slow) {
 	stableSpeed = speed;
 	stableIsMoving = isMoving;
 }
+void CSolidObject::StableInit(bool stable) {
+	if (stable) {
+		pStableBlocking = &stableBlocking;
+		pStablePos = &stablePos;
+		pStableMidPos = &stableMidPos;
+		pStableHeight = &stableHeight;
+		pStableIsUnderWater = &stableIsUnderWater;
+		pStableRadius = &stableRadius;
+		pStableXSize = &stableXSize;
+		pStableZSize = &stableZSize;
+		pStableMass = &stableMass;
+		pStableFrontDir = &stableFrontDir;
+		pStableRightDir = &stableRightDir;
+		pStableUpDir = &stableUpDir;
+		pStableSpeed = &stableSpeed;
+		pStableIsMoving = &stableIsMoving;
+		pStableCrushable = &stableCrushable;
+		pStableCrushResistance = &stableCrushResistance;
+		pStablePhysicalState = &stablePhysicalState;
+	} else {
+		pStableBlocking = &blocking;
+		pStablePos = &pos;
+		pStableMidPos = &midPos;
+		pStableHeight = &height;
+		pStableIsUnderWater = &isUnderWater;
+		pStableRadius = &radius;
+		pStableXSize = &xsize;
+		pStableZSize = &zsize;
+		pStableMass = &mass;
+		pStableFrontDir = &frontdir;
+		pStableRightDir = &rightdir;
+		pStableUpDir = &updir;
+		pStableSpeed = &speed;
+		pStableIsMoving = &isMoving;
+		pStableCrushable = &crushable;
+		pStableCrushResistance = &crushResistance;
+		pStablePhysicalState = &physicalState;
+	}
+}
 #endif
 
 void CSolidObject::UpdateStableData() {
 #if STABLE_UPDATE
-	int upd = gs->frameNum % 8;
+	int upd = gs->frameNum & 7;
 	for (std::set<CSolidObject *>::iterator i = solidObjects.begin(); i != solidObjects.end(); ++i) {
 		CSolidObject *s = *i;
-		s->StableUpdate((s->id % 8) == upd);
+		s->StableUpdate((s->id & 7) == upd);
 	}
 #endif
 }

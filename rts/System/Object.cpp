@@ -7,8 +7,8 @@
 #include "System/Log/ILog.h"
 #include "System/Platform/CrashHandler.h"
 #if MULTITHREADED_SIM
-#include <boost/thread/mutex.hpp>
-boost::mutex depMutex;
+#include "System/Platform/Synchro.h"
+Threading::Mutex depMutex;
 #endif
 
 #ifndef USE_MMGR
@@ -156,7 +156,7 @@ void CObject::DependentDied(CObject* obj)
 void CObject::AddDeathDependence(CObject* obj, DependenceType dep)
 {
 #if MULTITHREADED_SIM
-	boost::mutex::scoped_lock depLock(depMutex); // AddDeathDependence
+	Threading::ScopedLock depLock(depMutex, Threading::multiThreadedSim); // AddDeathDependence
 #endif
 	assert(!detached);
 	m_setOwner(__FILE__, __LINE__, __FUNCTION__);
@@ -171,7 +171,7 @@ void CObject::AddDeathDependence(CObject* obj, DependenceType dep)
 void CObject::DeleteDeathDependence(CObject* obj, DependenceType dep)
 {
 #if MULTITHREADED_SIM
-	boost::mutex::scoped_lock depLock(depMutex); // DeleteDeathDependence
+	Threading::ScopedLock depLock(depMutex, Threading::multiThreadedSim); // DeleteDeathDependence
 #endif
 	assert(!detached);
 	m_setOwner(__FILE__, __LINE__, __FUNCTION__);

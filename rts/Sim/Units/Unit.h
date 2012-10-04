@@ -521,21 +521,25 @@ public:
 	unsigned lastUnitUpdate;
 
 #if STABLE_UPDATE
-	bool stableBlockEnemyPushing;
-	bool stableBeingBuilt;
-	bool stableIsDead;
-	const CTransportUnit* stableTransporter;
-	bool stableStunned;
-	bool stableCommandQueEmpty;
+	bool stableBlockEnemyPushing, *pStableBlockEnemyPushing;
+	bool stableBeingBuilt, *pStableBeingBuilt;
+	bool stableIsDead, *pStableIsDead;
+	CTransportUnit* stableTransporter, **pStableTransporter;
+	bool stableStunned, *pStableStunned;
+	bool stableCommandQueEmpty, (CUnit::*pStableCommandQueEmpty)() const;
 	// shall return "stable" values, that do not suddenly change during a sim frame. (for multithreading purposes)
-	const bool StableBlockEnemyPushing() const { return stableBlockEnemyPushing; }
+	const bool StableBlockEnemyPushing() const { return *pStableBlockEnemyPushing; }
 	const bool StableUsingScriptMoveType() const { return usingScriptMoveType; } // appears to be MT stable by itself
-	const bool StableBeingBuilt() const { return stableBeingBuilt; }
-	const bool StableIsDead() const { return stableIsDead; }
-	const CTransportUnit* StableTransporter() const { return stableTransporter; }
-	const bool StableIsStunned() const { return stableStunned; }
-	const bool StableCommandQueEmpty() const { return stableCommandQueEmpty; }
+	const bool StableBeingBuilt() const { return *pStableBeingBuilt; }
+	const bool StableIsDead() const { return *pStableIsDead; }
+	const CTransportUnit* StableTransporter() const { return *pStableTransporter; }
+	const bool StableIsStunned() const { return *pStableStunned; }
+	const bool StableCommandQueEmpty() const { return (this->*pStableCommandQueEmpty)(); }
 
+	bool CommandQueEmpty() const;
+	bool CommandQueEmptyStable() const;
+
+	void StableInit(bool stable);
 	virtual void StableUpdate(bool slow);
 	void StableSlowUpdate();
 #else

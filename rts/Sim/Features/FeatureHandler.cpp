@@ -415,8 +415,10 @@ void CFeatureHandler::Update()
 
 			IPathManager::ScopedDisableThreading sdt;
 
-			for (CFeatureSet::iterator i = updateFeatures.begin(); i != updateFeatures.end(); ++i) {
-				(*i)->ExecuteDelayOps();
+			if (modInfo.asyncPathFinder) {
+				for (CFeatureSet::iterator i = updateFeatures.begin(); i != updateFeatures.end(); ++i) {
+					(*i)->ExecuteDelayOps();
+				}
 			}
 
 			if (toBeRemoved.empty())

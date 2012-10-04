@@ -5,26 +5,26 @@
 #include "QTPFS/PathManager.hpp"
 #include "Game/GlobalUnsynced.h"
 #include "System/Log/ILog.h"
+#include "System/Platform/CrashHandler.h"
 
 IPathManager* pathManager = NULL;
 boost::thread* IPathManager::pathBatchThread = NULL;
 
-IPathManager* IPathManager::GetInstance(unsigned int type) {
+IPathManager* IPathManager::GetInstance(unsigned int type, bool async) {
 	static IPathManager* pm = NULL;
 
 	if (pm == NULL) {
-		const char* fmtStr = "[IPathManager::GetInstance] using %s path-manager";
+		const char* fmtStr = "[IPathManager::GetInstance] using %s path-manager in %s mode";
 		const char* typeStr = "";
 
 		switch (type) {
 			case PFS_TYPE_DEFAULT: { typeStr = "DEFAULT"; pm = new       CPathManager(); } break;
 			case PFS_TYPE_QTPFS:   { typeStr = "QTPFS";   pm = new QTPFS::PathManager(); } break;
 		}
-#if THREADED_PATH
-		pathBatchThread = new boost::thread(boost::bind<void, IPathManager, IPathManager*>(&IPathManager::ThreadFunc, pm));
-#endif
+		if (async)
+			pathBatchThread = new boost::thread(boost::bind<void, IPathManager, IPathManager*>(&IPathManager::ThreadFunc, pm));
 
-		LOG(fmtStr, typeStr);
+		LOG(fmtStr, typeStr, async ? "asynchronous" : "synchronous");
 	}
 
 	return pm;
@@ -35,7 +35,6 @@ IPathManager::IPathManager() : pathRequestID(0), wait(false), stopThread(false) 
 
 
 IPathManager::~IPathManager() {
-#if THREADED_PATH
 	if (pathBatchThread != NULL) {
 		{
 			boost::mutex::scoped_lock preqLock(preqMutex);
@@ -48,7 +47,6 @@ IPathManager::~IPathManager() {
 		pathBatchThread->join();
 		pathBatchThread = NULL;
 	}
-#endif
 }
 
 
@@ -93,6 +91,16 @@ void IPathManager::UpdatePath(MT_WRAP const CSolidObject* owner, unsigned int pa
 		wait = false;
 		cond.notify_one();
 	}
+}
+
+
+bool IPathManager::IsFailPath(unsigned int pathID, bool async) {
+	if (!async)
+		return false;
+	boost::mutex::scoped_lock preqLock(preqMutex);
+
+	PathData* p = GetPathData(pathID);
+	return (p == NULL) || (p->pathID == 0);
 }
 
 
@@ -243,11 +251,10 @@ void IPathManager::ThreadFunc() {
 	}
 }
 
-#include "System/Platform/CrashHandler.h"
 
 void IPathManager::SynchronizeThread() {
 	ASSERT_SINGLETHREADED_SIM();
-	if (!Threading::threadedPath)
+	if (pathBatchThread == NULL)
 		return;
 
 	boost::mutex::scoped_lock preqLock(preqMutex);

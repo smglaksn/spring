@@ -263,44 +263,45 @@ public:
 	int buildFacing;                            ///< Orientation of footprint, 4 different states
 
 #if STABLE_UPDATE
-	bool stableBlocking;
-	float3 stablePos;
-	SyncedFloat3 stableMidPos;
-	float stableHeight;
-	bool stableIsUnderWater;
-	float stableRadius;
-	int stableXSize;
-	int stableZSize;
-	float stableMass;
-	SyncedFloat3 stableFrontDir;
-	SyncedFloat3 stableRightDir;
-	SyncedFloat3 stableUpDir;
-	float3 stableSpeed;
-	bool stableIsMoving;
-	bool stableCrushable;
-	float stableCrushResistance;
-	PhysicalState stablePhysicalState;
+	bool stableBlocking, *pStableBlocking;
+	float3 stablePos, *pStablePos;
+	SyncedFloat3 stableMidPos, *pStableMidPos;
+	float stableHeight, *pStableHeight;
+	bool stableIsUnderWater, *pStableIsUnderWater;
+	float stableRadius, *pStableRadius;
+	int stableXSize, *pStableXSize;
+	int stableZSize, *pStableZSize;
+	float stableMass, *pStableMass;
+	SyncedFloat3 stableFrontDir, *pStableFrontDir;
+	SyncedFloat3 stableRightDir, *pStableRightDir;
+	SyncedFloat3 stableUpDir, *pStableUpDir;
+	float3 stableSpeed, *pStableSpeed;
+	bool stableIsMoving, *pStableIsMoving;
+	bool stableCrushable, *pStableCrushable;
+	float stableCrushResistance, *pStableCrushResistance;
+	PhysicalState stablePhysicalState, *pStablePhysicalState;
 	// shall return "stable" values, that do not suddenly change during a sim frame. (for multithreading purposes)
-	const bool StableBlocking() const { return stableBlocking; }
-	const float3& StablePos() const { return stablePos; }
-	const SyncedFloat3& StableMidPos() const { return stableMidPos; }
-	const float StableHeight() const { return stableHeight; }
-	const bool StableUnderWater() const { return stableIsUnderWater; }
-	const float StableRadius() const { return stableRadius; }
-	const int StableXSize() const { return stableXSize; }
-	const int StableZSize() const { return stableZSize; }
-	const float StableMass() const { return stableMass; }
-	const SyncedFloat3& StableFrontDir() const { return stableFrontDir; }
-	const SyncedFloat3& StableRightDir() const { return stableRightDir; }
-	const SyncedFloat3& StableUpDir() const { return stableUpDir; }
-	const float3& StableSpeed() const { return stableSpeed; }
-	const bool StableIsMoving() const { return stableIsMoving; }
-	const bool StableCrushable() const { return stableCrushable; }
-	const float StableCrushResistance() const { return stableCrushResistance; }
+	const bool StableBlocking() const { return *pStableBlocking; }
+	const float3& StablePos() const { return *pStablePos; }
+	const SyncedFloat3& StableMidPos() const { return *pStableMidPos; }
+	const float StableHeight() const { return *pStableHeight; }
+	const bool StableUnderWater() const { return *pStableIsUnderWater; }
+	const float StableRadius() const { return *pStableRadius; }
+	const int StableXSize() const { return *pStableXSize; }
+	const int StableZSize() const { return *pStableZSize; }
+	const float StableMass() const { return *pStableMass; }
+	const SyncedFloat3& StableFrontDir() const { return *pStableFrontDir; }
+	const SyncedFloat3& StableRightDir() const { return *pStableRightDir; }
+	const SyncedFloat3& StableUpDir() const { return *pStableUpDir; }
+	const float3& StableSpeed() const { return *pStableSpeed; }
+	const bool StableIsMoving() const { return *pStableIsMoving; }
+	const bool StableCrushable() const { return *pStableCrushable; }
+	const float StableCrushResistance() const { return *pStableCrushResistance; }
 	const bool StableImmobile() const { return immobile; } // is stable by itself
-	const PhysicalState StablePhysicalState() const { return stablePhysicalState; }
+	const PhysicalState StablePhysicalState() const { return *pStablePhysicalState; }
 	const int StableAllyTeam() const { return allyteam; } // is stable by itself
 
+	void StableInit(bool stable);
 	virtual void StableUpdate(bool slow);
 	void StableSlowUpdate();
 #else

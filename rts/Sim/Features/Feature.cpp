@@ -72,6 +72,7 @@ CFeature::CFeature() : CSolidObject(),
 	immobile = true;
 
 	physicalState = OnGround;
+	StableInit(modInfo.asyncPathFinder);
 }
 
 CFeature::~CFeature()
@@ -690,5 +691,14 @@ void CFeature::StableUpdate(bool slow) {
 	if (slow)
 		StableSlowUpdate();
 	CSolidObject::StableUpdate(slow);
+}
+
+void CFeature::StableInit(bool stable) {
+	if (stable) {
+		pStableReachedFinalPos = &stableReachedFinalPos;
+	} else {
+		pStableReachedFinalPos = &reachedFinalPos;
+	}
+	CSolidObject::StableInit(stable);
 }
 #endif

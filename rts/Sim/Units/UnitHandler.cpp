@@ -82,10 +82,12 @@ CUnitHandler::CUnitHandler()
 
 	const size_t numThreads = std::max(0, configHandler->GetInt("SimThreadCount"));
 	const size_t numCores = Threading::GetAvailableCores();
-	simNumExtraThreads = std::max(0, (int)((numThreads == 0) ? numCores : numThreads) - 1);
-#if !MULTITHREADED_SIM
-	simNumExtraThreads = 0;
-#endif
+	simNumExtraThreads = (!modInfo.multiThreadSim) ? 0 : std::max(0, (int)((numThreads == 0) ? numCores : numThreads) - 1);
+
+	if (simNumExtraThreads > 0)
+		LOG("[Threading] Simulation multithreading is enabled with %d threads", simNumExtraThreads + 1);
+	else
+		LOG("[Threading] Simulation multithreading is disabled");
 
 	units.resize(maxUnits, NULL);
 	unitsByDefs.resize(teamHandler->ActiveTeams(), std::vector<CUnitSet>(unitDefHandler->unitDefs.size()));
@@ -270,34 +272,38 @@ void CUnitHandler::Update()
 
 	{
 		SCOPED_TIMER("Unit::MoveType::Update");
-		Threading::SetMultiThreadedSim(true);
-		Threading::SetThreadedPath(true);
+		Threading::SetMultiThreadedSim(modInfo.multiThreadSim);
+		Threading::SetThreadedPath(modInfo.asyncPathFinder);
 		// Use the current thread as thread zero. FIRE!
 		MoveTypeThreadFunc(0);
 		Threading::SetMultiThreadedSim(false);
 
-		// threaded pathing can run also during ExecuteDelayOps, since Block/UnBlock is further delayed
-		std::map<int, bool> blockOps;
-		for (std::list<CUnit*>::iterator i = activeUnits.begin(); i != activeUnits.end(); ++i) {
-			CUnit* u = *i;
-			if (!u->delayOps.empty()) {
-				int block = u->ExecuteDelayOps(); // can generate new delay ops, but it will execute these also
-				if (block)
-					blockOps[u->id] = block > 0;
+		if (modInfo.asyncPathFinder) {
+			// threaded pathing can run also during ExecuteDelayOps, since Block/UnBlock is further delayed
+			std::map<int, bool> blockOps;
+			for (std::list<CUnit*>::iterator i = activeUnits.begin(); i != activeUnits.end(); ++i) {
+				CUnit* u = *i;
+				if (!u->delayOps.empty()) {
+					int block = u->ExecuteDelayOps(); // can generate new delay ops, but it will execute these also
+					if (block)
+						blockOps[u->id] = block > 0;
+				}
+			}
+
+			IPathManager::ScopedDisableThreading sdt;
+
+			for (std::map<int, bool>::iterator i = blockOps.begin(); i != blockOps.end(); ++i) {
+				if (i->second)
+					units[i->first]->Block();
+				else
+					units[i->first]->UnBlock();
 			}
 		}
 
-		IPathManager::ScopedDisableThreading sdt;
-
-		for (std::map<int, bool>::iterator i = blockOps.begin(); i != blockOps.end(); ++i) {
-			if (i->second)
-				units[i->first]->Block();
-			else
-				units[i->first]->UnBlock();
-		}
-
-		pathManager->MergePathCaches();
-		CSolidObject::UpdateStableData();
+		if (modInfo.multiThreadSim)
+			pathManager->MergePathCaches();
+		if (modInfo.asyncPathFinder)
+			CSolidObject::UpdateStableData();
 	}
 
 	{

@@ -99,7 +99,6 @@ void QTPFS::PathCache::AddLivePath(IPath* path) {
 }
 
 void QTPFS::PathCache::Merge() {
-#if MULTITHREADED_SIM
 	for (std::map<int, std::vector<IPath*> >::iterator i = newTempPaths.begin(); i != newTempPaths.end(); ++i) {
 		for (std::vector<IPath*>::iterator p = i->second.begin(); p != i->second.end(); ++p) {
 			AddTempPath(*p);
@@ -125,7 +124,6 @@ void QTPFS::PathCache::Merge() {
 		}
 	}
 	newDelPaths.clear();
-#endif
 }
 
 void QTPFS::PathCache::DelPath(unsigned int pathID) {

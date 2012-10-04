@@ -7,6 +7,7 @@
 #include "MoveType.h"
 #include "Map/Ground.h"
 #include "Sim/Misc/LosHandler.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/RadarHandler.h"
 #include "Sim/Units/Unit.h"
@@ -47,6 +48,7 @@ AMoveType::AMoveType(CUnit* owner):
 
 	repairBelowHealth(0.3f)
 {
+	StableInit(modInfo.asyncPathFinder);
 }
 
 
@@ -105,4 +107,19 @@ void AMoveType::StableUpdate(bool slow) {
 	if (slow)
 		StableSlowUpdate();
 }
+
+void AMoveType::StableInit(bool stable) {
+	if (stable) {
+		pStableIsSkidding = &AMoveType::IsSkiddingStable;
+		pStableIsFlying = &AMoveType::IsFlyingStable;
+		pStableGoalPos = &stableGoalPos;
+	} else {
+		pStableIsSkidding = &AMoveType::IsSkidding;
+		pStableIsFlying = &AMoveType::IsFlying;
+		pStableGoalPos = &goalPos;
+	}
+}
+
+bool AMoveType::IsSkiddingStable() const { return stableIsSkidding; }
+bool AMoveType::IsFlyingStable() const { return stableIsFlying; }
 #endif

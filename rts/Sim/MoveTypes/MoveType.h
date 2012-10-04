@@ -48,14 +48,18 @@ public:
 	virtual bool IsReversing() const { return false; }
 
 #if STABLE_UPDATE
-	bool stableIsSkidding;
-	bool stableIsFlying;
-	float3 stableGoalPos;
+	bool stableIsSkidding, (AMoveType::*pStableIsSkidding)() const;
+	bool stableIsFlying, (AMoveType::*pStableIsFlying)() const;
+	float3 stableGoalPos, *pStableGoalPos;
 	// shall return "stable" values, that do not suddenly change during a sim frame. (for multithreading purposes)
-	bool StableIsSkidding() const { return stableIsSkidding; }
-	bool StableIsFlying() const { return stableIsFlying; }
-	const float3& StableGoalPos() const { return stableGoalPos; }
+	bool StableIsSkidding() const { return (this->*pStableIsSkidding)(); }
+	bool StableIsFlying() const { return (this->*pStableIsFlying)(); }
+	const float3& StableGoalPos() const { return *pStableGoalPos; }
 
+	bool IsSkiddingStable() const;
+	bool IsFlyingStable() const;
+
+	void StableInit(bool stable);
 	/*virtual*/ void StableUpdate(bool slow);
 	void StableSlowUpdate();
 #else

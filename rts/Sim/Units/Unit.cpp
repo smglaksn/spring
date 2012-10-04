@@ -245,6 +245,7 @@ CUnit::CUnit() : CSolidObject(),
 	stunned(false)
 {
 	GML::GetTicks(lastUnitUpdate);
+	StableInit(modInfo.asyncPathFinder);
 }
 
 CUnit::~CUnit()
@@ -2661,6 +2662,28 @@ void CUnit::StableUpdate(bool slow) {
 	if (moveType)
 		moveType->StableUpdate(slow);
 }
+
+void CUnit::StableInit(bool stable) {
+	if (stable) {
+		pStableBlockEnemyPushing = &stableBlockEnemyPushing;
+		pStableBeingBuilt = &stableBeingBuilt;
+		pStableIsDead = &stableIsDead;
+		pStableTransporter = &stableTransporter;
+		pStableStunned = &stableStunned;
+		pStableCommandQueEmpty = &CUnit::CommandQueEmptyStable;
+	} else {
+		pStableBlockEnemyPushing = &blockEnemyPushing;
+		pStableBeingBuilt = &beingBuilt;
+		pStableIsDead = &isDead;
+		pStableTransporter = &transporter;
+		pStableStunned = &stunned;
+		pStableCommandQueEmpty = &CUnit::CommandQueEmpty;
+	}
+	CSolidObject::StableInit(stable);
+}
+
+bool CUnit::CommandQueEmpty() const { return commandAI->commandQue.empty(); }
+bool CUnit::CommandQueEmptyStable() const { return stableCommandQueEmpty; }
 #endif
 
 CR_BIND_DERIVED(CUnit, CSolidObject, );
