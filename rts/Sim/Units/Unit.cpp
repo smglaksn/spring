@@ -2388,7 +2388,7 @@ void CUnit::QueKillUnit(bool delay) {
 		ASSERT_THREAD_OWNS_UNIT();
 		delayOps.push_back(DelayOp(KILLUNIT));
 	} else {
-		KillUnit(false, true, NULL, false);
+		KillUnit(true, false, NULL, false);
 	}
 }
 void CUnit::QueMove(bool delay) {
