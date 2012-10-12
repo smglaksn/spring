@@ -262,6 +262,9 @@ public:
 	const YardMapStatus* blockMap;              ///< Current (unrotated!) blockmap/yardmap of this object. 0 means no active yardmap => all blocked.
 	int buildFacing;                            ///< Orientation of footprint, 4 different states
 
+	/// quads the object is part of
+	std::vector<int> quads;
+
 #if STABLE_UPDATE
 	bool stableBlocking, *pStableBlocking;
 	float3 stablePos, *pStablePos;

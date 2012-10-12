@@ -315,8 +315,6 @@ public:
 	/// what categories the unit is part of (bitfield)
 	unsigned int category;
 
-	/// quads the unit is part of
-	std::vector<int> quads;
 	/// which squares the unit can currently observe
 	LosInstance* los;
 

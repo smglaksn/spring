@@ -213,9 +213,24 @@ std::vector<CUnit*> CQuadField::GetUnitsExact(const float3& pos, float radius, b
 	return units;
 }
 
-std::map<boost::int64_t, CUnit*> CQuadField::GetUnitsExactStable(const float3& pos, float radius)
+inline bool AlreadyProcessed(const CSolidObject *o, const std::vector<int>& quads, int curQuad) {
+	// this might seem like a stupid method using a linear time algorithm here, but the fact that
+	// the majority of units are small and therefore only populate 1-4 quads makes it faster than
+	// using a std::set or even tempNum, which both write to memory while this method only reads
+	const std::vector<int> &oq = o->quads;
+	if (oq.size() > 1) {
+		std::vector<int>::const_iterator qi = quads.cbegin(), oqi = oq.cbegin();
+		while (*qi != *oqi) //! assumes that quads and o->quads are sorted
+			(*qi < *oqi) ? ++qi : ++oqi;
+		if (*qi != curQuad)
+			return true;
+	}
+	return false;
+}
+
+std::vector<CUnit*> CQuadField::StableGetUnitsExact(const float3& pos, float radius)
 {
-	std::map<boost::int64_t, CUnit*> units;
+	std::vector<CUnit*> units;
 	const std::vector<int>& quads = GetQuads(pos, radius);
 
 	for (std::vector<int>::const_iterator q = quads.begin(); q != quads.end(); ++q) {
@@ -223,21 +238,21 @@ std::map<boost::int64_t, CUnit*> CQuadField::GetUnitsExactStable(const float3& p
 
 		for (std::list<CUnit*>::const_iterator i = quad.units.begin(); i != quad.units.end(); ++i) {
 			CUnit *u = *i;
-			if (units.find(u->GetSyncID()) != units.end())
+			if (AlreadyProcessed(u, quads, *q))
 				continue;
 			const float totRad = radius + u->StableRadius();
 			if ((pos - u->StableMidPos()).SqLength() >= totRad * totRad)
 				continue;
-			units[u->GetSyncID()] = u;
+			units.push_back(u);
 		}
 	}
 
 	return units;
 }
 
-std::map<boost::int64_t, CFeature*> CQuadField::GetFeaturesExactStable(const float3& pos, float radius)
+std::vector<CFeature*> CQuadField::StableGetFeaturesExact(const float3& pos, float radius)
 {
-	std::map<boost::int64_t, CFeature*> features;
+	std::vector<CFeature*> features;
 	const std::vector<int>& quads = GetQuads(pos, radius);
 
 	for (std::vector<int>::const_iterator q = quads.begin(); q != quads.end(); ++q) {
@@ -245,21 +260,21 @@ std::map<boost::int64_t, CFeature*> CQuadField::GetFeaturesExactStable(const flo
 
 		for (std::list<CFeature*>::const_iterator i = quad.features.begin(); i != quad.features.end(); ++i) {
 			CFeature *f = *i;
-			if (features.find(f->GetSyncID()) != features.end())
+			if (AlreadyProcessed(f, quads, *q))
 				continue;
 			const float totRad = radius + f->StableRadius();
 			if ((pos - f->StableMidPos()).SqLength() >= totRad * totRad)
 				continue;
-			features[f->GetSyncID()] = f;
+			features.push_back(f);
 		}
 	}
 
 	return features;
 }
 
-std::map<boost::int64_t, CSolidObject*> CQuadField::GetSolidsExactStable(const float3& pos, float radius)
+std::vector<CSolidObject*> CQuadField::StableGetSolidsExact(const float3& pos, float radius)
 {
-	std::map<boost::int64_t, CSolidObject*> solids;
+	std::vector<CSolidObject*> solids;
 	const std::vector<int>& quads = GetQuads(pos, radius);
 
 	for (std::vector<int>::const_iterator q = quads.begin(); q != quads.end(); ++q) {
@@ -269,23 +284,23 @@ std::map<boost::int64_t, CSolidObject*> CQuadField::GetSolidsExactStable(const f
 			CUnit *u = *i;
 			if (!u->StableBlocking())
 				continue;
-			if (solids.find(u->GetSyncID()) != solids.end())
+			if (AlreadyProcessed(u, quads, *q))
 				continue;
 			const float totRad = radius + u->StableRadius();
 			if ((pos - u->StableMidPos()).SqLength() >= totRad * totRad)
 				continue;
-			solids[u->GetSyncID()] = u;
+			solids.push_back(u);
 		}
 		for (std::list<CFeature*>::const_iterator i = quad.features.begin(); i != quad.features.end(); ++i) {
 			CFeature *f = *i;
 			if (!f->StableBlocking())
 				continue;
-			if (solids.find(f->GetSyncID()) != solids.end())
+			if (AlreadyProcessed(f, quads, *q))
 				continue;
 			const float totRad = radius + f->StableRadius();
 			if ((pos - f->StableMidPos()).SqLength() >= totRad * totRad)
 				continue;
-			solids[f->GetSyncID()] = f;
+			solids.push_back(f);
 		}
 	}
 
@@ -551,6 +566,8 @@ void CQuadField::AddFeature(CFeature* feature)
 	for (qi = newQuads.begin(); qi != newQuads.end(); ++qi) {
 		baseQuads[*qi].features.push_front(feature);
 	}
+
+	feature->quads = newQuads;
 }
 
 void CQuadField::RemoveFeature(CFeature* feature)
@@ -564,6 +581,8 @@ void CQuadField::RemoveFeature(CFeature* feature)
 	for (qi = quads.begin(); qi != quads.end(); ++qi) {
 		baseQuads[*qi].features.remove(feature);
 	}
+
+	feature->quads.clear();
 
 	#ifdef DEBUG_QUADFIELD
 	for (int x = 0; x < numQuadsX; x++) {

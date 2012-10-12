@@ -1011,10 +1011,10 @@ bool CHoverAirMoveType::HandleCollisions()
 		bool hitBuilding = false;
 
 		if (!loadingUnits && checkCollisions) {
-			const std::map<boost::int64_t, CUnit*>& nearUnits = qf->GetUnitsExactStable(pos, owner->radius + 6);
+			const std::vector<CUnit*>& nearUnits = qf->StableGetUnitsExact(pos, owner->radius + 6);
 
-			for (std::map<boost::int64_t, CUnit*>::const_iterator ui = nearUnits.begin(); ui != nearUnits.end(); ++ui) {
-				CUnit* unit = ui->second;
+			for (std::vector<CUnit*>::const_iterator ui = nearUnits.begin(); ui != nearUnits.end(); ++ui) {
+				CUnit* unit = *ui;
 
 				if (unit->StableTransporter() != NULL) // PROBLEM
 					continue;

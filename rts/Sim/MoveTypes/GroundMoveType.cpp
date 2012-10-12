@@ -850,15 +850,15 @@ void CGroundMoveType::CheckCollisionSkid()
 	//     derived from o->pos (!)
 	const float3& pos = collider->pos;
 	const UnitDef* colliderUD = collider->unitDef;
-	const std::map<boost::int64_t, CUnit*>& nearUnits = qf->GetUnitsExactStable(pos, collider->radius);
-	const std::map<boost::int64_t, CFeature*>& nearFeatures = qf->GetFeaturesExactStable(pos, collider->radius);
+	const std::vector<CUnit*>& nearUnits = qf->StableGetUnitsExact(pos, collider->radius);
+	const std::vector<CFeature*>& nearFeatures = qf->StableGetFeaturesExact(pos, collider->radius);
 
 	// magic number to reduce damage taken from collisions
 	// between a very heavy and a very light CSolidObject
 	static const float MASS_MULT = 0.02f;
 
-	for (std::map<boost::int64_t, CUnit*>::const_iterator ui = nearUnits.begin(); ui != nearUnits.end(); ++ui) {
-		CUnit* collidee = ui->second;
+	for (std::vector<CUnit*>::const_iterator ui = nearUnits.begin(); ui != nearUnits.end(); ++ui) {
+		CUnit* collidee = *ui;
 		const UnitDef* collideeUD = collider->unitDef;
 
 		const float sqDist = (pos - collidee->StablePos()).SqLength();
@@ -930,8 +930,8 @@ void CGroundMoveType::CheckCollisionSkid()
 		}
 	}
 
-	for (std::map<boost::int64_t, CFeature*>::const_iterator fi = nearFeatures.begin(); fi != nearFeatures.end(); ++fi) {
-		CFeature* f = fi->second;
+	for (std::vector<CFeature*>::const_iterator fi = nearFeatures.begin(); fi != nearFeatures.end(); ++fi) {
+		CFeature* f = *fi;
 
 		if (!f->StableBlocking())
 			continue;
@@ -1035,10 +1035,10 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 	const float avoidanceRadius = std::max(currentSpeed, 1.0f) * (avoider->radius * 2.0f);
 	const float avoiderRadius = FOOTPRINT_RADIUS(avoiderMD->xsize, avoiderMD->zsize, 1.0f);
 
-	std::map<boost::int64_t, CSolidObject*> nearbyObjects = qf->GetSolidsExactStable(avoider->pos, avoidanceRadius);
+	std::vector<CSolidObject*> nearbyObjects = qf->StableGetSolidsExact(avoider->pos, avoidanceRadius);
 
-	for (std::map<boost::int64_t, CSolidObject*>::const_iterator oi = nearbyObjects.begin(); oi != nearbyObjects.end(); ++oi) {
-		CSolidObject* avoidee = oi->second;
+	for (std::vector<CSolidObject*>::const_iterator oi = nearbyObjects.begin(); oi != nearbyObjects.end(); ++oi) {
+		CSolidObject* avoidee = *oi;
 		MoveDef* avoideeMD = avoidee->moveDef;
 
 		// cases in which there is no need to avoid this obstacle
@@ -1543,14 +1543,14 @@ void CGroundMoveType::HandleUnitCollisions(
 ) {
 	const float searchRadius = std::max(colliderSpeed, 1.0f) * (colliderRadius * 1.0f);
 
-	const std::map<boost::int64_t, CUnit*>& nearUnits = qf->GetUnitsExactStable(collider->pos, searchRadius);
+	const std::vector<CUnit*>& nearUnits = qf->StableGetUnitsExact(collider->pos, searchRadius);
 
 	// NOTE: probably too large for most units (eg. causes tree falling animations to be skipped)
 	const int dirSign = int(!reversing) * 2 - 1;
 	const float3 crushImpulse = collider->speed * collider->mass * dirSign;
 
-	for (std::map<boost::int64_t, CUnit*>::const_iterator uit = nearUnits.begin(); uit != nearUnits.end(); ++uit) {
-		CUnit* collidee = uit->second;
+	for (std::vector<CUnit*>::const_iterator uit = nearUnits.begin(); uit != nearUnits.end(); ++uit) {
+		CUnit* collidee = *uit;
 
 		if (collidee == collider) { continue; }
 		if (collidee->moveType->StableIsSkidding()) { continue; }
@@ -1737,13 +1737,13 @@ void CGroundMoveType::HandleFeatureCollisions(
 ) {
 	const float searchRadius = std::max(colliderSpeed, 1.0f) * (colliderRadius * 1.0f);
 
-	const std::map<boost::int64_t, CFeature*>& nearFeatures = qf->GetFeaturesExactStable(collider->pos, searchRadius);
+	const std::vector<CFeature*>& nearFeatures = qf->StableGetFeaturesExact(collider->pos, searchRadius);
 
 	const int dirSign = int(!reversing) * 2 - 1;
 	const float3 crushImpulse = collider->speed * collider->mass * dirSign;
 
-	for (std::map<boost::int64_t, CFeature*>::const_iterator fit = nearFeatures.begin(); fit != nearFeatures.end(); ++fit) {
-		CFeature* collidee = fit->second;
+	for (std::vector<CFeature*>::const_iterator fit = nearFeatures.begin(); fit != nearFeatures.end(); ++fit) {
+		CFeature* collidee = *fit;
 		// const FeatureDef* collideeFD = collidee->def;
 
 		// use the collidee's Feature (not FeatureDef) footprint as radius

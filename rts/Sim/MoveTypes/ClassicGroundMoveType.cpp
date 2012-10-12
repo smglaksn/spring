@@ -645,11 +645,11 @@ void CClassicGroundMoveType::CheckCollisionSkid()
 {
 	const SyncedFloat3& midPos = owner->midPos;
 
-	const std::map<boost::int64_t, CUnit*>& nearUnits = qf->GetUnitsExactStable(midPos, owner->radius);
-	const std::map<boost::int64_t, CFeature*>& nearFeatures = qf->GetFeaturesExactStable(midPos, owner->radius);
+	const std::vector<CUnit*>& nearUnits = qf->StableGetUnitsExact(midPos, owner->radius);
+	const std::vector<CFeature*>& nearFeatures = qf->StableGetFeaturesExact(midPos, owner->radius);
 
-	for (std::map<boost::int64_t, CUnit*>::const_iterator ui = nearUnits.begin(); ui != nearUnits.end(); ++ui) {
-		CUnit* u = ui->second;
+	for (std::vector<CUnit*>::const_iterator ui = nearUnits.begin(); ui != nearUnits.end(); ++ui) {
+		CUnit* u = *ui;
 		float sqDist = (midPos - u->StableMidPos()).SqLength();
 		float totRad = owner->radius + u->StableRadius();
 
@@ -701,8 +701,8 @@ void CClassicGroundMoveType::CheckCollisionSkid()
 		}
 	}
 
-	for (std::map<boost::int64_t, CFeature*>::const_iterator fi = nearFeatures.begin(); fi != nearFeatures.end(); ++fi) {
-		CFeature* u = fi->second;
+	for (std::vector<CFeature*>::const_iterator fi = nearFeatures.begin(); fi != nearFeatures.end(); ++fi) {
+		CFeature* u = *fi;
 		if(!u->StableBlocking())
 			continue;
 		float sqDist=(midPos-u->StableMidPos()).SqLength();
@@ -813,11 +813,11 @@ float3 CClassicGroundMoveType::ObstacleAvoidance(float3 desiredDir) {
 
 			MoveDef* moveDef = owner->moveDef;
 
-			std::map<boost::int64_t, CSolidObject*> nearbyObjects = qf->GetSolidsExactStable(owner->pos, speedf * 35 + 30 + owner->xsize / 2);
+			std::vector<CSolidObject*> nearbyObjects = qf->StableGetSolidsExact(owner->pos, speedf * 35 + 30 + owner->xsize / 2);
 			vector<CSolidObject*> objectsOnPath;
 
-			for (std::map<boost::int64_t, CSolidObject*>::const_iterator oi = nearbyObjects.begin(); oi != nearbyObjects.end(); ++oi) {
-				CSolidObject* o = oi->second;
+			for (std::vector<CSolidObject*>::const_iterator oi = nearbyObjects.begin(); oi != nearbyObjects.end(); ++oi) {
+				CSolidObject* o = *oi;
 
 				if (CMoveMath::IsNonBlocking(*moveDef, o, owner)) {
 					continue;

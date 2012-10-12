@@ -299,10 +299,10 @@ bool CStrafeAirMoveType::HandleCollisions() {
 		bool hitBuilding = false;
 
 		if (checkCollisions) {
-			const std::map<boost::int64_t, CUnit*>& nearUnits = qf->GetUnitsExactStable(pos, owner->radius + 6);
+			const std::vector<CUnit*>& nearUnits = qf->StableGetUnitsExact(pos, owner->radius + 6);
 
-			for (std::map<boost::int64_t, CUnit*>::const_iterator ui = nearUnits.begin(); ui != nearUnits.end(); ++ui) {
-				CUnit* unit = ui->second;
+			for (std::vector<CUnit*>::const_iterator ui = nearUnits.begin(); ui != nearUnits.end(); ++ui) {
+				CUnit* unit = *ui;
 
 				const float sqDist = (pos - unit->StablePos()).SqLength();
 				const float totRad = owner->radius + unit->StableRadius();

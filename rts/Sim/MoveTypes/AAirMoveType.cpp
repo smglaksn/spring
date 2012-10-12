@@ -211,7 +211,7 @@ void AAirMoveType::CheckForCollision()
 	const SyncedFloat3& forward = owner->frontdir;
 
 	const float3 midTestPos = pos + forward * 121.0f;
-	const std::map<boost::int64_t, CUnit*>& others = qf->GetUnitsExactStable(midTestPos, 115.0f);
+	const std::vector<CUnit*>& others = qf->StableGetUnitsExact(midTestPos, 115.0f);
 
 	float dist = 200.0f;
 
@@ -221,8 +221,8 @@ void AAirMoveType::CheckForCollision()
 		lastColWarningType = 0;
 	}
 
-	for (std::map<boost::int64_t, CUnit*>::const_iterator ui = others.begin(); ui != others.end(); ++ui) {
-		const CUnit* unit = ui->second;
+	for (std::vector<CUnit*>::const_iterator ui = others.begin(); ui != others.end(); ++ui) {
+		const CUnit* unit = *ui;
 
 		if (unit == owner || !unit->unitDef->canfly) {
 			continue;
@@ -253,8 +253,8 @@ void AAirMoveType::CheckForCollision()
 		return;
 	}
 
-	for (std::map<boost::int64_t, CUnit*>::const_iterator ui = others.begin(); ui != others.end(); ++ui) {
-		CUnit* u = ui->second;
+	for (std::vector<CUnit*>::const_iterator ui = others.begin(); ui != others.end(); ++ui) {
+		CUnit* u = *ui;
 		if (u == owner)
 			continue;
 		if ((u->StableMidPos() - pos).SqLength() < (dist * dist)) {
