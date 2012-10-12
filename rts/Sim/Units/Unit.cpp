@@ -2640,6 +2640,7 @@ int CUnit::ExecuteDelayOps() {
 	return ret;
 }
 
+bool CUnit::CommandQueEmpty() const { return commandAI->commandQue.empty(); }
 #if STABLE_UPDATE
 void CUnit::StableSlowUpdate() {
 	stableBlockEnemyPushing = blockEnemyPushing;
@@ -2680,7 +2681,6 @@ void CUnit::StableInit(bool stable) {
 	CSolidObject::StableInit(stable);
 }
 
-bool CUnit::CommandQueEmpty() const { return commandAI->commandQue.empty(); }
 bool CUnit::CommandQueEmptyStable() const { return stableCommandQueEmpty; }
 #endif
 

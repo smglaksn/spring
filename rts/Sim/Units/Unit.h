@@ -523,6 +523,7 @@ public:
 
 	unsigned lastUnitUpdate;
 
+	bool CommandQueEmpty() const;
 #if STABLE_UPDATE
 	bool stableBlockEnemyPushing, *pStableBlockEnemyPushing;
 	bool stableBeingBuilt, *pStableBeingBuilt;
@@ -539,7 +540,6 @@ public:
 	const bool StableIsStunned() const { return *pStableStunned; }
 	const bool StableCommandQueEmpty() const { return (this->*pStableCommandQueEmpty)(); }
 
-	bool CommandQueEmpty() const;
 	bool CommandQueEmptyStable() const;
 
 	void StableInit(bool stable);
@@ -552,7 +552,7 @@ public:
 	const bool StableIsDead() const { return isDead; }
 	const CTransportUnit* StableTransporter() const { return transporter; }
 	const bool StableIsStunned() const { return stunned; }
-	const bool StableCommandQueEmpty() const { return commandAI->commandQue.empty(); }
+	const bool StableCommandQueEmpty() const { return CommandQueEmpty(); }
 #endif
 
 	void QueScriptStopMoving(bool delay = Threading::multiThreadedSim);

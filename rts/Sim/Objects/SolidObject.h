@@ -324,6 +324,9 @@ public:
 	const bool StableImmobile() const { return immobile; }
 	const PhysicalState StablePhysicalState() const { return physicalState; }
 	const int StableAllyTeam() const { return allyteam; } // is stable by itself
+
+	void StableInit(bool stable) {}
+	void StableUpdate(bool slow) {}
 #endif
 
 

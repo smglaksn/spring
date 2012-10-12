@@ -86,6 +86,7 @@ namespace Threading {
 	#define ASSERT_NONTHREADED_PATH() do { if (DEBUG_THREADED_PATH && Threading::threadedPath) Threading::NonThreadedPathErrorFunc(); } while(false)
 	inline void SetThreadedPath(bool tp) { threadedPath = tp; }
 #else
+	#define ASSERT_NONTHREADED_PATH()
 	inline void SetThreadedPath(bool tp) {}
 #endif
 

@@ -66,6 +66,9 @@ public:
 	bool StableIsSkidding() const { return IsSkidding(); }
 	bool StableIsFlying() const { return IsFlying(); }
 	const float3& StableGoalPos() const { return goalPos; }
+
+	void StableInit(bool stable) {}
+	/*virtual*/ void StableUpdate(bool slow) {}
 #endif
 
 	virtual void ReservePad(CAirBaseHandler::LandingPad* lp) { /* AAirMoveType only */ }
