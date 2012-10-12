@@ -286,7 +286,7 @@ void CClassicGroundMoveType::SlowUpdate()
 {
 	ASSERT_SINGLETHREADED_SIM();
 
-	if (pathId > 0 && pathManager->IsFailPath(pathId, modInfo.asyncPathFinder)) {
+	if (pathId > 0 && pathManager->IsFailPath(pathId)) {
 		pathManager->DeletePath(pathId);
 		pathId = 0;
 	}

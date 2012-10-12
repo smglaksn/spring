@@ -4,6 +4,7 @@
 #include "Default/PathManager.h"
 #include "QTPFS/PathManager.hpp"
 #include "Game/GlobalUnsynced.h"
+#include "Sim/Misc/ModInfo.h"
 #include "System/Log/ILog.h"
 #include "System/Platform/CrashHandler.h"
 
@@ -64,6 +65,8 @@ int IPathManager::GetPathID(int cid) {
 
 bool IPathManager::PathUpdated(MT_WRAP unsigned int pathID) {
 	if (!Threading::threadedPath) {
+		if (!modInfo.asyncPathFinder)
+			return PathUpdated(ST_CALL pathID);
 		PathData* p = GetPathData(pathID);
 		return (p != NULL && p->pathID >= 0) ? PathUpdated(ST_CALL p->pathID) : false;
 	}
@@ -80,6 +83,8 @@ bool IPathManager::PathUpdated(MT_WRAP unsigned int pathID) {
 
 void IPathManager::UpdatePath(MT_WRAP const CSolidObject* owner, unsigned int pathID) {
 	if (!Threading::threadedPath) {
+		if (!modInfo.asyncPathFinder)
+			return UpdatePath(ST_CALL owner, pathID);
 		PathData* p = GetPathData(pathID);
 		if (p != NULL && p->pathID >= 0)
 			UpdatePath(ST_CALL owner, p->pathID);
@@ -94,8 +99,8 @@ void IPathManager::UpdatePath(MT_WRAP const CSolidObject* owner, unsigned int pa
 }
 
 
-bool IPathManager::IsFailPath(unsigned int pathID, bool async) {
-	if (!async)
+bool IPathManager::IsFailPath(unsigned int pathID) {
+	if (!modInfo.asyncPathFinder)
 		return false;
 	boost::mutex::scoped_lock preqLock(preqMutex);
 
@@ -106,6 +111,8 @@ bool IPathManager::IsFailPath(unsigned int pathID, bool async) {
 
 void IPathManager::DeletePath(MT_WRAP unsigned int pathID) {
 	if (!Threading::threadedPath) {
+		if (!modInfo.asyncPathFinder)
+			return DeletePath(ST_CALL pathID);
 		PathData* p = GetPathData(pathID);
 		if (p != NULL && p->pathID >= 0)
 			DeletePath(ST_CALL p->pathID);
@@ -131,6 +138,8 @@ float3 IPathManager::NextWayPoint(
 	bool synced
 	) {
 		if (!Threading::threadedPath) {
+			if (!modInfo.asyncPathFinder)
+				return NextWayPoint(ST_CALL pathID, callerPos, minDistance, numRetries, owner, synced);
 			PathData* p = GetPathData(pathID);
 			if (p == NULL || p->pathID < 0)
 				return callerPos;
@@ -156,12 +165,14 @@ void IPathManager::GetPathWayPoints(
 	std::vector<float3>& points,
 	std::vector<int>& starts
 	) {
+		if (!modInfo.asyncPathFinder)
+			return GetPathWayPoints(ST_CALL pathID, points, starts);
 		ScopedDisableThreading sdt;
 		boost::mutex::scoped_lock preqLock(preqMutex);
 		PathData* p = GetPathData(pathID);
 		if (p == NULL || p->pathID < 0)
 			return;
-		return GetPathWayPoints(ST_CALL pathID, points, starts);
+		return GetPathWayPoints(ST_CALL p->pathID, points, starts);
 }
 
 
@@ -175,6 +186,8 @@ unsigned int IPathManager::RequestPath(
 	bool synced
 	) {
 		if (!Threading::threadedPath) {
+			if (!modInfo.asyncPathFinder)
+				return RequestPath(ST_CALL moveDef, startPos, goalPos, goalRadius, caller, synced);
 			int cid = ++pathRequestID;
 			pathInfos[cid] = PathData(RequestPath(ST_CALL moveDef, startPos, goalPos, goalRadius, caller, synced), startPos);
 			return cid;

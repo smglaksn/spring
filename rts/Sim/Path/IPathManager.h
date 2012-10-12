@@ -78,7 +78,7 @@ public:
 		return (pit == pathInfos.end()) ? NULL : &(pit->second);
 	}
 
-	bool IsFailPath(unsigned int pathID, bool async);
+	bool IsFailPath(unsigned int pathID);
 
 	struct PathOpData {
 		PathOpData() : type(PATH_NONE), moveDef(NULL), startPos(ZeroVector), goalPos(ZeroVector), minDistance(0.0f), owner(NULL), synced(false), pathID(-1), numRetries(0) {}
