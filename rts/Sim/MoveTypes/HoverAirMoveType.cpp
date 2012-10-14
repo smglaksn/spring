@@ -914,18 +914,13 @@ bool CHoverAirMoveType::Update()
 
 void CHoverAirMoveType::SlowUpdate()
 {
-	ASSERT_SINGLETHREADED_SIM();
 	UpdateFuel();
 
 	// HoverAirMoveType aircraft are controlled by AirCAI's,
 	// but only MobileCAI's reserve pads so we need to do
 	// this for ourselves
 	if (reservedPad == NULL && aircraftState == AIRCRAFT_FLYING && WantsRepair()) {
-		CAirBaseHandler::LandingPad* lp = airBaseHandler->FindAirBase(owner, owner->unitDef->minAirBasePower, true);
-
-		if (lp != NULL) {
-			AAirMoveType::ReservePad(lp);
-		}
+		owner->QueFindPad();
 	}
 
 	UpdateMoveRate();

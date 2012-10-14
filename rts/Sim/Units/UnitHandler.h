@@ -98,6 +98,8 @@ private:
 	boost::thread* simThreads[GML_MAX_NUM_THREADS];
 	gmlCount unitCount;
 	volatile bool stopThread;
+	enum MoveTypeStage { UPDATE_MOVETYPE, SLOW_UPDATE_MOVETYPE, DELAYED_SLOW_UPDATE_MOVETYPE};
+	volatile MoveTypeStage moveTypeStage;
 };
 
 extern CUnitHandler* uh;

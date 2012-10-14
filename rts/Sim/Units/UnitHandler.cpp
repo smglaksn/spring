@@ -70,6 +70,7 @@ CUnitHandler::CUnitHandler()
 	morphUnitToFeature(true),
 	maxUnits(0),
 	stopThread(false),
+	moveTypeStage(UPDATE_MOVETYPE),
 	unitCount(0),
 	simBarrier(NULL)
 {
@@ -275,6 +276,7 @@ void CUnitHandler::Update()
 		Threading::SetMultiThreadedSim(modInfo.multiThreadSim);
 		Threading::SetThreadedPath(modInfo.asyncPathFinder);
 		// Use the current thread as thread zero. FIRE!
+		moveTypeStage = UPDATE_MOVETYPE;
 		MoveTypeThreadFunc(0);
 		Threading::SetMultiThreadedSim(false);
 
@@ -330,6 +332,21 @@ void CUnitHandler::Update()
 		}
 	}
 
+
+	{
+		SCOPED_TIMER("Unit::MoveType::SlowUpdate");
+
+		Threading::SetMultiThreadedSim(modInfo.multiThreadSim);
+		// Use the current thread as thread zero. FIRE!
+		moveTypeStage = SLOW_UPDATE_MOVETYPE;
+		MoveTypeThreadFunc(0);
+
+		Threading::SetMultiThreadedSim(false);
+		// Use the current thread as thread zero. FIRE!
+		moveTypeStage = DELAYED_SLOW_UPDATE_MOVETYPE;
+		MoveTypeThreadFunc(0);
+	}
+
 	{
 		SCOPED_TIMER("Unit::SlowUpdate");
 
@@ -377,30 +394,100 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 			GML::ThreadNumber(GML_MAX_NUM_THREADS + i);
 		}
 		do {
-			if (i == 0)
+			if (i == 0) {
 				unitCount %= -1;
+				if (moveTypeStage == SLOW_UPDATE_MOVETYPE)
+					memset(CUnit::slowUpdates, 0, sizeof(CUnit::slowUpdates));
+			}
 			simBarrier->wait();
 			if (stopThread)
 				break;
 			int curPos = 0;
-			std::list<CUnit*>::iterator usi = activeUnits.begin();
-			while(true) {
-				int nextPos = ++unitCount;
-				if (nextPos >= activeUnits.size())	break;
-				while(curPos < nextPos) { ++usi; ++curPos; }
+			if (moveTypeStage == UPDATE_MOVETYPE) {
+				std::list<CUnit*>::iterator usi = activeUnits.begin();
+				while(true) {
+					int nextPos = ++unitCount;
+					if (nextPos >= activeUnits.size()) break;
+					while(curPos < nextPos) { ++usi; ++curPos; }
 
-				CUnit *unit = *usi;
-				Threading::SetThreadCurrentUnitID(unit->id);
-				UpdateMoveType(unit);
+					CUnit *unit = *usi;
+					Threading::SetThreadCurrentUnitID(unit->id);
+					UpdateMoveType(unit);
+				}
+			} else if (moveTypeStage == SLOW_UPDATE_MOVETYPE) {
+				std::list<CUnit*>::iterator sui = ((gs->frameNum & (UNIT_SLOWUPDATE_RATE - 1)) == 0) ? activeUnits.begin() : slowUpdateIterator;
+				int n = (activeUnits.size() / UNIT_SLOWUPDATE_RATE) + 1;
+
+				while(true) {
+					int nextPos = ++unitCount;
+					if (nextPos >= n) break;
+					while(curPos < nextPos && sui != activeUnits.end()) { ++sui; ++curPos; }
+					if (sui == activeUnits.end()) break;
+
+					CUnit *unit = *sui;
+					Threading::SetThreadCurrentUnitID(unit->id);
+					unit->moveType->SlowUpdate();
+				}
+			} else if (moveTypeStage == DELAYED_SLOW_UPDATE_MOVETYPE) {
+				while(true) {
+					int nextPos = ++unitCount;
+					if (nextPos > 3)
+						break;
+					switch(nextPos) {
+						case 0:
+							for (int i = 0; i < MAX_UNITS; ++i) {
+								if (CUnit::slowUpdates[i] & CUnit::UPDATE_LOS) {
+									units[i]->QueUpdateLOS(false);
+								}
+							}
+							break;
+						case 1:
+							for (int i = 0; i < MAX_UNITS; ++i) {
+								if (CUnit::slowUpdates[i] & CUnit::UPDATE_RADAR) {
+									units[i]->QueUpdateRadar(false);
+								}
+							}
+							break;
+						case 2:
+							for (int i = 0; i < MAX_UNITS; ++i) {
+								if (CUnit::slowUpdates[i] & CUnit::UPDATE_QUAD) {
+									units[i]->QueUpdateQuad(false);
+								}
+							}
+							break;
+						case 3:
+							for (int i = 0; i < MAX_UNITS; ++i) {
+								if (CUnit::slowUpdates[i] & CUnit::FIND_PAD) {
+									units[i]->QueFindPad(false);
+								}
+							}
+							break;
+						default:
+							LOG_L(L_ERROR, "Invalid slow update type");
+					}
+				}
 			}
 			simBarrier->wait();
 		} while (i > 0);
 	}
 	else {
-		for (std::list<CUnit*>::iterator usi = activeUnits.begin(); usi != activeUnits.end(); ++usi) {
-			CUnit *unit = *usi;
-			Threading::SetThreadCurrentUnitID(unit->id);
-			UpdateMoveType(unit);
+		if (moveTypeStage == UPDATE_MOVETYPE) {
+			for (std::list<CUnit*>::iterator usi = activeUnits.begin(); usi != activeUnits.end(); ++usi) {
+				CUnit *unit = *usi;
+				Threading::SetThreadCurrentUnitID(unit->id);
+				UpdateMoveType(unit);
+			}
+		} else if (moveTypeStage == SLOW_UPDATE_MOVETYPE) {
+			std::list<CUnit*>::iterator sui = ((gs->frameNum & (UNIT_SLOWUPDATE_RATE - 1)) == 0) ? activeUnits.begin() : slowUpdateIterator;
+			int n = (activeUnits.size() / UNIT_SLOWUPDATE_RATE) + 1;
+
+			for (; sui != activeUnits.end() && n != 0; ++sui) {
+				CUnit *unit = *sui;
+				Threading::SetThreadCurrentUnitID(unit->id);
+				unit->moveType->SlowUpdate();
+			}
+		} else if (moveTypeStage == DELAYED_SLOW_UPDATE_MOVETYPE) {
+			// not needed for singlethreaded sim
 		}
 	}
 }

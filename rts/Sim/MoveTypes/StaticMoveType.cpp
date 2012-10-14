@@ -14,7 +14,6 @@ CR_REG_METADATA(CStaticMoveType, (
 
 void CStaticMoveType::SlowUpdate()
 {
-	ASSERT_SINGLETHREADED_SIM();
 	// NOTE:
 	//     static buildings don't have any unitDef->moveDef, hence we need
 	//     to get the ground height instead of calling CMoveMath::yLevel()

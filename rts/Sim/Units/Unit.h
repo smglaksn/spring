@@ -582,8 +582,15 @@ public:
 	void QueAddBuildPower(float amount, CSolidObject *o, bool delay = Threading::multiThreadedSim);
 	void QueGetAirBasePadPos(CSolidObject *o, bool delay = Threading::multiThreadedSim);
 	void QueMoveUnitOldPos(CSolidObject *o, bool delay = Threading::multiThreadedSim);
+	void QueUpdateLOS(bool delay = Threading::multiThreadedSim);
+	void QueUpdateRadar(bool delay = Threading::multiThreadedSim);
+	void QueUpdateQuad(bool delay = Threading::multiThreadedSim);
+	void QueFindPad(bool delay = Threading::multiThreadedSim);
 
 	int ExecuteDelayOps();
+
+	enum SLOW_UPDATE { UPDATE_LOS = 1, UPDATE_RADAR = 2, UPDATE_QUAD = 4, FIND_PAD = 8 };
+	static unsigned char slowUpdates[MAX_UNITS];
 
 private:
 	/// if we are stunned by a weapon or for other reason, access via IsStunned/SetStunned(bool)

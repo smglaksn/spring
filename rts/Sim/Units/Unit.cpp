@@ -85,7 +85,7 @@ float CUnit::expPowerScale  = 1.0f;
 float CUnit::expHealthScale = 0.7f;
 float CUnit::expReloadScale = 0.4f;
 float CUnit::expGrade       = 0.0f;
-
+unsigned char CUnit::slowUpdates[MAX_UNITS] = {0};
 
 CUnit::CUnit() : CSolidObject(),
 	unitDef(NULL),
@@ -937,7 +937,6 @@ void CUnit::SlowUpdate()
 
 	// below is stuff that should not be run while being built
 	commandAI->SlowUpdate();
-	moveType->SlowUpdate();
 
 	// FIXME: scriptMakeMetal ...?
 	AddMetal(uncondMakeMetal);
@@ -2525,6 +2524,48 @@ void CUnit::QueMoveUnitOldPos(CSolidObject *o, bool delay) {
 	} else {
 		CUnit* u = static_cast<CUnit *>(o);
 		u->Move3D(u->moveType->oldPos, false);
+	}
+}
+
+void CUnit::QueUpdateLOS(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		slowUpdates[id] |= UPDATE_LOS;
+	} else {
+		loshandler->MoveUnit(this, false);
+	}
+}
+
+void CUnit::QueUpdateRadar(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		slowUpdates[id] |= UPDATE_RADAR;
+	} else {
+		radarhandler->MoveUnit(this);
+	}
+}
+
+void CUnit::QueUpdateQuad(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		slowUpdates[id] |= UPDATE_QUAD;
+	} else {
+		qf->MovedUnit(this);
+	}
+}
+
+void CUnit::QueFindPad(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		slowUpdates[id] |= FIND_PAD;
+	} else {
+		CAirBaseHandler::LandingPad* lp = airBaseHandler->FindAirBase(this, unitDef->minAirBasePower, true);
+		if (lp != NULL) {
+			AAirMoveType* mt = dynamic_cast<AAirMoveType*>(moveType);
+			if (mt != NULL) {
+				mt->ReservePad(lp);
+			}
+		}
 	}
 }
 

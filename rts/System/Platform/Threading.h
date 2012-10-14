@@ -17,8 +17,8 @@
 #include "lib/gml/gml_base.h"
 #include "System/Platform/ThreadingConfig.h"
 
-#define DEBUG_MULTITHREADED_SIM (1 && GML_ENABLE_SIM) // enable debug output, requires GML
-#define DEBUG_THREADED_PATH (1 && GML_ENABLE_SIM) // enable debug output, requires GML
+#define DEBUG_MULTITHREADED_SIM (0 && GML_ENABLE_SIM) // enable debug output, requires GML
+#define DEBUG_THREADED_PATH (0 && GML_ENABLE_SIM) // enable debug output, requires GML
 
 namespace Threading {
 	/**

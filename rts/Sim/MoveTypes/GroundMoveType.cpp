@@ -38,7 +38,7 @@
 
 #if 1
 #include "Rendering/GlobalRendering.h"
-#define DEBUG_DRAWING_ENABLED globalRendering->drawdebug
+#define DEBUG_DRAWING_ENABLED globalRendering->drawdebug && !Threading::multiThreadedSim
 #else
 #define DEBUG_DRAWING_ENABLED false
 #endif
@@ -320,8 +320,6 @@ bool CGroundMoveType::Update()
 
 void CGroundMoveType::SlowUpdate()
 {
-	ASSERT_SINGLETHREADED_SIM();
-
 	if (pathId > 0 && pathManager->IsFailPath(pathId)) {
 		pathManager->DeletePath(pathId);
 		pathId = 0;

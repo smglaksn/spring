@@ -369,7 +369,6 @@ bool CStrafeAirMoveType::HandleCollisions() {
 
 void CStrafeAirMoveType::SlowUpdate()
 {
-	ASSERT_SINGLETHREADED_SIM();
 	UpdateFuel();
 
 	// try to handle aircraft getting unlimited height

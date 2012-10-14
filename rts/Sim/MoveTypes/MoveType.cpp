@@ -55,7 +55,6 @@ AMoveType::AMoveType(CUnit* owner):
 
 void AMoveType::SlowUpdate()
 {
-	ASSERT_SINGLETHREADED_SIM();
 	if (owner->pos != oldSlowUpdatePos) {
 		oldSlowUpdatePos = owner->pos;
 
@@ -73,8 +72,8 @@ void AMoveType::SlowUpdate()
 				owner->radarHeight = owner->losHeight;
 			}
 
-			loshandler->MoveUnit(owner, false);
-			radarhandler->MoveUnit(owner);
+			owner->QueUpdateLOS();
+			owner->QueUpdateRadar();
 
 			if (isAirMoveType) {
 				owner->losHeight = losHeight;
@@ -82,7 +81,7 @@ void AMoveType::SlowUpdate()
 			}
 		}
 
-		qf->MovedUnit(owner);
+		owner->QueUpdateQuad();
 	}
 }
 
