@@ -1033,6 +1033,7 @@ bool CWeapon::SetTargetBorderPos(
 // (terrain is NOT checked here, subclasses do that)
 bool CWeapon::TryTarget(const float3& tgtPos, bool /*userTarget*/, CUnit* targetUnit)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	if (targetUnit && !(onlyTargetCategory & targetUnit->category)) {
 		return false;
 	}

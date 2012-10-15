@@ -55,6 +55,7 @@
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "Sim/MoveTypes/AAirMoveType.h"
 #include "Sim/MoveTypes/ClassicGroundMoveType.h"
+#include "Sim/MoveTypes/GroundMoveType.h"
 #include "Sim/MoveTypes/ScriptMoveType.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Projectiles/FlareProjectile.h"
@@ -1131,6 +1132,7 @@ void CUnit::DoWaterDamage()
 
 void CUnit::DoDamage(const DamageArray& damages, const float3& impulse, CUnit* attacker, int weaponDefID)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	if (isDead || crashing) {
 		return;
 	}
@@ -2527,6 +2529,20 @@ void CUnit::QueMoveUnitOldPos(CSolidObject *o, bool delay) {
 	}
 }
 
+void CUnit::QueChangeTargetHeading(int heading, bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(CHANGE_TARGETHEADING, heading));
+	} else {
+		CGroundMoveType* gmt = dynamic_cast<CGroundMoveType*>(moveType);
+		if (gmt != NULL)
+			return gmt->ChangeTargetHeading(heading);
+		CClassicGroundMoveType* cmt = dynamic_cast<CClassicGroundMoveType*>(moveType);
+		if (cmt != NULL)
+			return cmt->ChangeTargetHeading(heading);
+	}
+}
+
 void CUnit::QueUpdateLOS(bool delay) {
 	if (delay) {
 		ASSERT_THREAD_OWNS_UNIT();
@@ -2660,6 +2676,9 @@ int CUnit::ExecuteDelayOps() {
 				break;
 			case MOVE_UNIT_OLDPOS:
 				QueMoveUnitOldPos(const_cast<CSolidObject *>(d.obj), false);
+				break;
+			case CHANGE_TARGETHEADING:
+				QueChangeTargetHeading(d.data, false);
 				break;
 			default:
 				LOG_L(L_ERROR, "Unknown delay operation: %d", d.type);

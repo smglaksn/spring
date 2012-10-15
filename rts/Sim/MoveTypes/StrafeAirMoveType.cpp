@@ -319,7 +319,7 @@ bool CStrafeAirMoveType::HandleCollisions() {
 
 					const float damage = ((unit->StableSpeed() - owner->speed) * 0.1f).SqLength();
 
-					owner->DoDamage(DamageArray(damage), ZeroVector, NULL, -CSolidObject::DAMAGE_COLLISION_OBJECT);
+					owner->QueDoDamage(owner, damage, ZeroVector, -CSolidObject::DAMAGE_COLLISION_OBJECT);
 					owner->QueDoDamage(unit, damage, ZeroVector, -CSolidObject::DAMAGE_COLLISION_OBJECT);
 
 					hitBuilding = true;
@@ -331,7 +331,7 @@ bool CStrafeAirMoveType::HandleCollisions() {
 
 					const float damage = ((unit->StableSpeed() - owner->speed) * 0.1f).SqLength();
 
-					owner->DoDamage(DamageArray(damage), ZeroVector, NULL, -CSolidObject::DAMAGE_COLLISION_OBJECT);
+					owner->QueDoDamage(owner, damage, ZeroVector, -CSolidObject::DAMAGE_COLLISION_OBJECT);
 					owner->QueDoDamage(unit, damage, ZeroVector, -CSolidObject::DAMAGE_COLLISION_OBJECT);
 
 					owner->speed *= 0.99f;

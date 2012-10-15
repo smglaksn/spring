@@ -717,7 +717,7 @@ void CGroundMoveType::UpdateSkid()
 			//     bouncing behaves too much like a rubber-ball,
 			//     most impact energy needs to go into the ground
 			if (doColliderDamage) {
-				owner->DoDamage(DamageArray(impactDamageMult), ZeroVector, NULL, -CSolidObject::DAMAGE_COLLISION_GROUND);
+				owner->QueDoDamage(owner, impactDamageMult, ZeroVector, -CSolidObject::DAMAGE_COLLISION_GROUND);
 			}
 
 			skidRotSpeed = 0.0f;
@@ -884,7 +884,7 @@ void CGroundMoveType::CheckCollisionSkid()
 
 			// damage the collider, no added impulse
 			if (doColliderDamage) {
-				collider->DoDamage(DamageArray(impactDamageMult), ZeroVector, NULL, -CSolidObject::DAMAGE_COLLISION_OBJECT);
+				collider->QueDoDamage(collider, impactDamageMult, ZeroVector, -CSolidObject::DAMAGE_COLLISION_OBJECT);
 			}
 			// damage the (static) collidee based on collider's mass, no added impulse
 			if (doCollideeDamage) {
@@ -915,7 +915,7 @@ void CGroundMoveType::CheckCollisionSkid()
 
 			// damage the collider
 			if (doColliderDamage) {
-				collider->DoDamage(DamageArray(colliderImpactDmgMult), dif * colliderImpactDmgMult, NULL, -CSolidObject::DAMAGE_COLLISION_OBJECT);
+				collider->QueDoDamage(collider, colliderImpactDmgMult, dif * colliderImpactDmgMult, -CSolidObject::DAMAGE_COLLISION_OBJECT);
 			}
 			// damage the collidee
 			if (doCollideeDamage) {
@@ -954,7 +954,7 @@ void CGroundMoveType::CheckCollisionSkid()
 
 		// damage the collider, no added impulse (!) 
 		if (doColliderDamage) {
-			collider->DoDamage(DamageArray(impactDamageMult), ZeroVector, NULL, -CSolidObject::DAMAGE_COLLISION_OBJECT);
+			collider->QueDoDamage(collider, impactDamageMult, ZeroVector, -CSolidObject::DAMAGE_COLLISION_OBJECT);
 		}
 
 		// damage the collidee feature based on collider's mass
@@ -1503,7 +1503,7 @@ void CGroundMoveType::HandleStaticObjectCollision(
 		const float  colRadiusSum = colliderRadius + collideeRadius;
 		const float   sepDistance = separationVector.Length() + 0.1f;
 		const float   penDistance = std::min(sepDistance - colRadiusSum, 0.0f);
-		const float  colSlideSign = ((collidee->pos.dot(collider->rightdir) - collider->pos.dot(collider->rightdir)) <= 0.0f) * 2.0f - 1.0f;
+		const float  colSlideSign = ((collidee->StablePos().dot(collider->rightdir) - collider->pos.dot(collider->rightdir)) <= 0.0f) * 2.0f - 1.0f;
 
 		// when exiting a lab, insideYardMap goes from true to false
 		// before we stop colliding and we get a slight unneeded push
@@ -2113,13 +2113,17 @@ void CGroundMoveType::SetMainHeading() {
 		}
 	} else {
 		if (owner->heading != newHeading) {
-			if (!frontWeapon->TryTarget(mainHeadingPos, true, 0)) {
-				// start moving
-				progressState = Active;
-				owner->QueScriptStartMoving();
-				ChangeHeading(newHeading);
-			}
+			owner->QueChangeTargetHeading(newHeading);
 		}
+	}
+}
+
+void CGroundMoveType::ChangeTargetHeading(short heading) {
+	ASSERT_SINGLETHREADED_SIM();
+	if (!owner->weapons.front()->TryTarget(mainHeadingPos, true, NULL)) {
+		progressState = Active;
+		owner->script->StartMoving();
+		ChangeHeading(heading);
 	}
 }
 

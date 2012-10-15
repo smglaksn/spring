@@ -34,6 +34,8 @@ public:
 	bool IsSkidding() const { return skidding; }
 	bool IsFlying() const { return flying; }
 
+	void ChangeTargetHeading(short heading);
+
 	bool skidding;
 
 private:

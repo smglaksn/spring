@@ -94,7 +94,8 @@ public:
 		UPDATE_MIDAIMPOS,
 		ADDBUILDPOWER,
 		GETAIRBASEPADPOS,
-		MOVE_UNIT_OLDPOS
+		MOVE_UNIT_OLDPOS,
+		CHANGE_TARGETHEADING
 	};
 	struct DelayOp {
 		DelayOp(DelayOpType t) : type(t), obj(NULL), vec(ZeroVector), damage(0.0f), dmgtype(0) {}
