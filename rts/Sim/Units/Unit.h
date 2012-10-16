@@ -591,7 +591,7 @@ public:
 	int ExecuteDelayOps();
 
 	enum SLOW_UPDATE { UPDATE_LOS = 1, UPDATE_RADAR = 2, UPDATE_QUAD = 4, FIND_PAD = 8 };
-	static unsigned char slowUpdates[MAX_UNITS];
+	static char updateOps[MAX_UNITS];
 
 private:
 	/// if we are stunned by a weapon or for other reason, access via IsStunned/SetStunned(bool)

@@ -1520,7 +1520,7 @@ void CClassicGroundMoveType::KeepPointingTo(float3 pos, float distance, bool agg
 				GetHeadingFromVector(dir2.x, dir2.z) -
 				GetHeadingFromVector(dir1.x, dir1.z);
 			if (owner->heading != heading
-					&& !(owner->weapons.front()->TryTarget( // Appears to be MT safe since targetUnit is NULL
+					&& !(owner->weapons.front()->TryTarget(
 					mainHeadingPos, true, NULL))) {
 				progressState = Active;
 			}

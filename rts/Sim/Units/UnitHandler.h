@@ -100,6 +100,7 @@ private:
 	volatile bool stopThread;
 	enum MoveTypeStage { UPDATE_MOVETYPE, SLOW_UPDATE_MOVETYPE, DELAYED_SLOW_UPDATE_MOVETYPE};
 	volatile MoveTypeStage moveTypeStage;
+	unsigned short blockOps[MAX_UNITS];
 };
 
 extern CUnitHandler* uh;

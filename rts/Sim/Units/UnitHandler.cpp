@@ -281,31 +281,29 @@ void CUnitHandler::Update()
 		Threading::SetMultiThreadedSim(false);
 
 		if (modInfo.asyncPathFinder) {
+			int nBlockOps = 0;
 			// threaded pathing can run also during ExecuteDelayOps, since Block/UnBlock is further delayed
-			std::map<int, bool> blockOps;
 			for (std::list<CUnit*>::iterator i = activeUnits.begin(); i != activeUnits.end(); ++i) {
 				CUnit* u = *i;
 				if (!u->delayOps.empty()) {
 					int block = u->ExecuteDelayOps(); // can generate new delay ops, but it will execute these also
-					if (block)
-						blockOps[u->id] = block > 0;
+					if (block) {
+						CUnit::updateOps[u->id] = block;
+						blockOps[nBlockOps++] = u->id;
+					}
 				}
 			}
 
 			IPathManager::ScopedDisableThreading sdt;
 
-			for (std::map<int, bool>::iterator i = blockOps.begin(); i != blockOps.end(); ++i) {
-				if (i->second)
-					units[i->first]->Block();
-				else
-					units[i->first]->UnBlock();
+			for (int i = 0; i < nBlockOps; ++i) {
+				int id = blockOps[i];
+				(CUnit::updateOps[id] > 0) ? units[id]->Block() : units[id]->UnBlock();
 			}
-		}
-
-		if (modInfo.multiThreadSim)
-			pathManager->MergePathCaches();
-		if (modInfo.asyncPathFinder)
+			if (modInfo.multiThreadSim)
+				pathManager->MergePathCaches();
 			CSolidObject::UpdateStableData();
+		}
 	}
 
 	{
@@ -392,12 +390,13 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 		if (i > 0) {
 			streflop::streflop_init<streflop::Simple>();
 			GML::ThreadNumber(GML_MAX_NUM_THREADS + i);
+			Threading::SetAffinityHelper("SimMT", configHandler->GetUnsigned("SetCoreAffinitySimMT"));
 		}
 		do {
 			if (i == 0) {
 				unitCount %= -1;
 				if (moveTypeStage == SLOW_UPDATE_MOVETYPE)
-					memset(CUnit::slowUpdates, 0, sizeof(CUnit::slowUpdates));
+					memset(CUnit::updateOps, 0, sizeof(CUnit::updateOps));
 			}
 			simBarrier->wait();
 			if (stopThread)
@@ -436,28 +435,28 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 					switch(nextPos) {
 						case 0:
 							for (int i = 0; i < MAX_UNITS; ++i) {
-								if (CUnit::slowUpdates[i] & CUnit::UPDATE_LOS) {
+								if (CUnit::updateOps[i] & CUnit::UPDATE_LOS) {
 									units[i]->QueUpdateLOS(false);
 								}
 							}
 							break;
 						case 1:
 							for (int i = 0; i < MAX_UNITS; ++i) {
-								if (CUnit::slowUpdates[i] & CUnit::UPDATE_RADAR) {
+								if (CUnit::updateOps[i] & CUnit::UPDATE_RADAR) {
 									units[i]->QueUpdateRadar(false);
 								}
 							}
 							break;
 						case 2:
 							for (int i = 0; i < MAX_UNITS; ++i) {
-								if (CUnit::slowUpdates[i] & CUnit::UPDATE_QUAD) {
+								if (CUnit::updateOps[i] & CUnit::UPDATE_QUAD) {
 									units[i]->QueUpdateQuad(false);
 								}
 							}
 							break;
 						case 3:
 							for (int i = 0; i < MAX_UNITS; ++i) {
-								if (CUnit::slowUpdates[i] & CUnit::FIND_PAD) {
+								if (CUnit::updateOps[i] & CUnit::FIND_PAD) {
 									units[i]->QueFindPad(false);
 								}
 							}

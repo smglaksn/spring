@@ -83,7 +83,9 @@
 #include "lib/luasocket/src/restrictions.h"
 
 CONFIG(unsigned, SetCoreAffinity).defaultValue(0).safemodeValue(1).description("Defines a bitmask indicating which CPU cores the main-thread should use.");
-CONFIG(unsigned, SetCoreAffinitySim).defaultValue(0).safemodeValue(1).description("Defines a bitmask indicating which CPU cores the sim-thread should use.");
+CONFIG(unsigned, SetCoreAffinitySim).defaultValue(0).safemodeValue(1).description("Defines a bitmask indicating which CPU cores the primary sim-thread should use.");
+CONFIG(unsigned, SetCoreAffinitySimMT).defaultValue(0).safemodeValue(1).description("Defines a bitmask indicating which CPU cores the secondary sim-thread(s) should use.");
+CONFIG(unsigned, SetCoreAffinityPath).defaultValue(0).safemodeValue(1).description("Defines a bitmask indicating which CPU cores the asynchronous path-thread should use.");
 CONFIG(int, DepthBufferBits).defaultValue(24);
 CONFIG(int, StencilBufferBits).defaultValue(8);
 CONFIG(int, FSAALevel).defaultValue(0);

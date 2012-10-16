@@ -86,7 +86,7 @@ float CUnit::expPowerScale  = 1.0f;
 float CUnit::expHealthScale = 0.7f;
 float CUnit::expReloadScale = 0.4f;
 float CUnit::expGrade       = 0.0f;
-unsigned char CUnit::slowUpdates[MAX_UNITS] = {0};
+char CUnit::updateOps[MAX_UNITS] = {0};
 
 CUnit::CUnit() : CSolidObject(),
 	unitDef(NULL),
@@ -2546,7 +2546,7 @@ void CUnit::QueChangeTargetHeading(int heading, bool delay) {
 void CUnit::QueUpdateLOS(bool delay) {
 	if (delay) {
 		ASSERT_THREAD_OWNS_UNIT();
-		slowUpdates[id] |= UPDATE_LOS;
+		updateOps[id] |= UPDATE_LOS;
 	} else {
 		loshandler->MoveUnit(this, false);
 	}
@@ -2555,7 +2555,7 @@ void CUnit::QueUpdateLOS(bool delay) {
 void CUnit::QueUpdateRadar(bool delay) {
 	if (delay) {
 		ASSERT_THREAD_OWNS_UNIT();
-		slowUpdates[id] |= UPDATE_RADAR;
+		updateOps[id] |= UPDATE_RADAR;
 	} else {
 		radarhandler->MoveUnit(this);
 	}
@@ -2564,7 +2564,7 @@ void CUnit::QueUpdateRadar(bool delay) {
 void CUnit::QueUpdateQuad(bool delay) {
 	if (delay) {
 		ASSERT_THREAD_OWNS_UNIT();
-		slowUpdates[id] |= UPDATE_QUAD;
+		updateOps[id] |= UPDATE_QUAD;
 	} else {
 		qf->MovedUnit(this);
 	}
@@ -2573,7 +2573,7 @@ void CUnit::QueUpdateQuad(bool delay) {
 void CUnit::QueFindPad(bool delay) {
 	if (delay) {
 		ASSERT_THREAD_OWNS_UNIT();
-		slowUpdates[id] |= FIND_PAD;
+		updateOps[id] |= FIND_PAD;
 	} else {
 		CAirBaseHandler::LandingPad* lp = airBaseHandler->FindAirBase(this, unitDef->minAirBasePower, true);
 		if (lp != NULL) {
