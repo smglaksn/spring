@@ -243,6 +243,14 @@ CUnit::CUnit() : CSolidObject(),
 	lastDrawFrame(-30),
 #endif
 	lastUnitUpdate(0),
+#if STABLE_UPDATE && DEBUG_STABLE_UPDATE
+	stableBlockEnemyPushing(true),
+	stableBeingBuilt(true),
+	stableIsDead(false),
+	stableTransporter(NULL),
+	stableStunned(false),
+	stableCommandQueEmpty(true),
+#endif
 	stunned(false)
 {
 	GML::GetTicks(lastUnitUpdate);

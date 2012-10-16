@@ -115,6 +115,25 @@ CSolidObject::CSolidObject():
 	midPos(pos),
 	mapPos(GetMapPos()),
 	blockMap(NULL),
+#if STABLE_UPDATE && DEBUG_STABLE_UPDATE
+	stableBlocking(false),
+	stablePos(pos),
+	stableMidPos(pos),
+	stableHeight(0.0f),
+	stableIsUnderWater(false),
+	stableRadius(0.0f),
+	stableXSize(1),
+	stableZSize(1),
+	stableMass(DEFAULT_MASS),
+	stableFrontDir(0.0f, 0.0f, 1.0f),
+	stableRightDir(-1.0f, 0.0f, 0.0f),
+	stableUpDir(0.0f, 1.0f, 0.0f),
+	stableSpeed(ZeroVector),
+	stableIsMoving(false),
+	stableCrushable(false),
+	stableCrushResistance(0.0f),
+	stablePhysicalState(OnGround),
+#endif
 	buildFacing(0)
 {
 	solidObjects.insert(this);

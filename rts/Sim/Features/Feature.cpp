@@ -66,6 +66,9 @@ CFeature::CFeature() : CSolidObject(),
 	myFire(NULL),
 	fireTime(0),
 	emitSmokeTime(0),
+#if STABLE_UPDATE && DEBUG_STABLE_UPDATE
+	stableReachedFinalPos(true),
+#endif
 	solidOnTop(NULL)
 {
 	crushable = true;

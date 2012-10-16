@@ -19,6 +19,7 @@
 
 #define DEBUG_MULTITHREADED_SIM (0 && GML_ENABLE_SIM) // enable debug output, requires GML
 #define DEBUG_THREADED_PATH (0 && GML_ENABLE_SIM) // enable debug output, requires GML
+#define DEBUG_STABLE_UPDATE (0 && GML_ENABLE_SIM) // enable debug output, requires GML
 
 namespace Threading {
 	/**
