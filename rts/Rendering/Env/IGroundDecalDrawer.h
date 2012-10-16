@@ -30,6 +30,7 @@ public:
 	static void SetDrawDecals(bool v) { if (decalLevel > 0) { drawDecals = v; } } //FIXME
 
 	static IGroundDecalDrawer* GetInstance();
+	static void FreeInstance();
 
 public:
 	virtual void Draw() = 0;
@@ -44,6 +45,7 @@ public:
 
 public:
 	IGroundDecalDrawer();
+	virtual ~IGroundDecalDrawer(){}
 
 protected:
 	static bool drawDecals;

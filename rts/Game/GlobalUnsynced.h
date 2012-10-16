@@ -5,6 +5,7 @@
 
 #include "System/creg/creg_cond.h"
 #include "System/float3.h"
+#include "System/UnsyncedRNG.h"
 
 class CPlayer;
 class CGameSetup;
@@ -15,15 +16,17 @@ class CGameSetup;
  * Contains globally accessible data that does not remain synced
  */
 class CGlobalUnsynced {
-	CR_DECLARE(CGlobalUnsynced);
+	CR_DECLARE_STRUCT(CGlobalUnsynced);
 
 	CGlobalUnsynced();
 	~CGlobalUnsynced();
 
+	static UnsyncedRNG rng;
+
 public:
-	int    usRandInt();    //!< Unsynced random int
-	float  usRandFloat();  //!< Unsynced random float
-	float3 usRandVector(); //!< Unsynced random vector
+	int    RandInt()    { return rng.RandInt(); }    //!< random int [0, (INT_MAX & 0x7FFF))
+	float  RandFloat()  { return rng.RandFloat(); }  //!< random float [0, 1)
+	float3 RandVector() { return rng.RandVector(); } //!< random vector with length = [0, 1)
 
 	void LoadFromSetup(const CGameSetup* setup);
 	void SetMyPlayer(const int myNumber);
@@ -168,14 +171,6 @@ public:
 	* wants to quit
 	*/
 	volatile bool globalQuit;
-
-private:
-	/**
-	* @brief rand seed
-	*
-	* Stores the unsynced random seed
-	*/
-	int usRandSeed;
 };
 
 extern CGlobalUnsynced* gu;
