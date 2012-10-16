@@ -524,6 +524,7 @@ void gmlQueue::WaitFinish() {
 void gmlQueue::ReleaseRead() {
 	if(Read==NULL)
 		return;
+	BOOL Waited;
 	{
 		boost::mutex::scoped_lock lock(Mut);
 
@@ -540,11 +541,12 @@ void gmlQueue::ReleaseRead() {
 		Read=NULL;
 		ReadPos=NULL;
 
-		if (Wait) {
+		if ((Waited = Wait)) {
 			Wait = FALSE;
-			Cond.notify_one();
 		}
 	}
+	if (Waited)
+		Cond.notify_one();
 }
 
 BOOL_ gmlQueue::GetRead(BOOL_ critical) {
