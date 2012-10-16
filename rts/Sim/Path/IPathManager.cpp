@@ -5,8 +5,10 @@
 #include "QTPFS/PathManager.hpp"
 #include "Game/GlobalUnsynced.h"
 #include "Sim/Misc/ModInfo.h"
+#include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 #include "System/Platform/CrashHandler.h"
+#include "System/TimeProfiler.h"
 
 IPathManager* pathManager = NULL;
 boost::thread* IPathManager::pathBatchThread = NULL;
@@ -23,7 +25,7 @@ IPathManager* IPathManager::GetInstance(unsigned int type, bool async) {
 			case PFS_TYPE_QTPFS:   { typeStr = "QTPFS";   pm = new QTPFS::PathManager(); } break;
 		}
 		if (async)
-			pathBatchThread = new boost::thread(boost::bind<void, IPathManager, IPathManager*>(&IPathManager::ThreadFunc, pm));
+			pathBatchThread = new boost::thread(boost::bind<void, IPathManager, IPathManager*>(&IPathManager::AsynchronousThread, pm));
 
 		LOG(fmtStr, typeStr, async ? "asynchronous" : "synchronous");
 	}
@@ -56,12 +58,20 @@ int IPathManager::GetPathID(int cid) {
 	if (it != newPathCache.end())
 		return it->second;
 
-	boost::mutex::scoped_lock preqLock(preqMutex);
-
-	PathData* p = GetPathData(cid);
+	PathData* p = GetPathDataRaw(cid);
 	return (p == NULL) ? -1 : p->pathID;
 }
 
+#define NOTIFY_PATH_THREAD(stm) \
+	bool waited; \
+	{ \
+		boost::mutex::scoped_lock preqLock(preqMutex); \
+		stm \
+		if ((waited = wait)) \
+			wait = false;\
+	} \
+	if (waited) \
+		cond.notify_one();
 
 bool IPathManager::PathUpdated(MT_WRAP unsigned int pathID) {
 	if (!Threading::threadedPath) {
@@ -70,13 +80,11 @@ bool IPathManager::PathUpdated(MT_WRAP unsigned int pathID) {
 		PathData* p = GetPathData(pathID);
 		return (p != NULL && p->pathID >= 0) ? PathUpdated(ST_CALL p->pathID) : false;
 	}
-	boost::mutex::scoped_lock preqLock(preqMutex);
-	PathData* p = GetPathData(pathID);
-	pathOps.push_back(PathOpData(PATH_UPDATED, pathID));
-	if (wait) {
-		wait = false;
-		cond.notify_one();
-	}
+	PathData* p;
+	NOTIFY_PATH_THREAD(
+		p = GetNewPathData(pathID);
+		pathOps.push_back(PathOpData(PATH_UPDATED, pathID));
+	)
 	return (p != NULL && p->pathID >= 0) ? p->updated : false;
 }
 
@@ -90,12 +98,9 @@ void IPathManager::UpdatePath(MT_WRAP const CSolidObject* owner, unsigned int pa
 			UpdatePath(ST_CALL owner, p->pathID);
 		return;
 	}
-	boost::mutex::scoped_lock preqLock(preqMutex);
-	pathOps.push_back(PathOpData(UPDATE_PATH, owner, pathID));
-	if (wait) {
-		wait = false;
-		cond.notify_one();
-	}
+	NOTIFY_PATH_THREAD(
+		pathOps.push_back(PathOpData(UPDATE_PATH, owner, pathID));
+	)
 }
 
 
@@ -104,7 +109,7 @@ bool IPathManager::IsFailPath(unsigned int pathID) {
 		return false;
 	boost::mutex::scoped_lock preqLock(preqMutex);
 
-	PathData* p = GetPathData(pathID);
+	PathData* p = GetNewPathData(pathID);
 	return (p == NULL) || (p->pathID == 0);
 }
 
@@ -119,11 +124,13 @@ void IPathManager::DeletePath(MT_WRAP unsigned int pathID) {
 		pathInfos.erase(pathID);
 		return;
 	}
-	boost::mutex::scoped_lock preqLock(preqMutex);
-	pathOps.push_back(PathOpData(DELETE_PATH, pathID));
-	if (wait) {
-		wait = false;
-		cond.notify_one();
+	PathData* p;
+	NOTIFY_PATH_THREAD(
+		p = GetNewPathData(pathID);
+		pathOps.push_back(PathOpData(DELETE_PATH, pathID));
+	)
+	if (p) {
+		p->deleted = true;
 	}
 }
 
@@ -146,13 +153,11 @@ float3 IPathManager::NextWayPoint(
 			p->nextWayPoint = NextWayPoint(ST_CALL p->pathID, callerPos, minDistance, numRetries, owner, synced);
 			return p->nextWayPoint;
 		}
-		boost::mutex::scoped_lock preqLock(preqMutex);
-		PathData* p = GetPathData(pathID);
-		pathOps.push_back(PathOpData(NEXT_WAYPOINT, pathID, callerPos, minDistance, numRetries, owner, synced));
-		if (wait) {
-			wait = false;
-			cond.notify_one();
-		}
+		PathData* p;
+		NOTIFY_PATH_THREAD(
+			p = GetNewPathData(pathID);
+			pathOps.push_back(PathOpData(NEXT_WAYPOINT, pathID, callerPos, minDistance, numRetries, owner, synced));
+		)
 		if (p == NULL || p->pathID < 0)
 			return callerPos;
 		return p->nextWayPoint;
@@ -168,7 +173,6 @@ void IPathManager::GetPathWayPoints(
 		if (!modInfo.asyncPathFinder)
 			return GetPathWayPoints(ST_CALL pathID, points, starts);
 		ScopedDisableThreading sdt;
-		boost::mutex::scoped_lock preqLock(preqMutex);
 		PathData* p = GetPathData(pathID);
 		if (p == NULL || p->pathID < 0)
 			return;
@@ -192,20 +196,19 @@ unsigned int IPathManager::RequestPath(
 			pathInfos[cid] = PathData(RequestPath(ST_CALL moveDef, startPos, goalPos, goalRadius, caller, synced), startPos);
 			return cid;
 		}
-		boost::mutex::scoped_lock preqLock(preqMutex);
-		int cid = ++pathRequestID;
-		pathOps.push_back(PathOpData(REQUEST_PATH, cid, moveDef, startPos, goalPos, goalRadius, caller, synced));
-		pathInfos[cid] = PathData(-1, startPos);
-		if (wait) {
-			wait = false;
-			cond.notify_one();
-		}
+		int cid;
+		NOTIFY_PATH_THREAD(
+			cid = ++pathRequestID;
+			newPathInfos[cid] = PathData(-1, startPos);
+			pathOps.push_back(PathOpData(REQUEST_PATH, cid, moveDef, startPos, goalPos, goalRadius, caller, synced));
+		)
 		return cid;
 }
 
 
-void IPathManager::ThreadFunc() {
+void IPathManager::AsynchronousThread() {
 	streflop::streflop_init<streflop::Simple>();
+	Threading::SetAffinityHelper("Path", configHandler->GetUnsigned("SetCoreAffinityPath"));
 
 	while(true) {
 		std::vector<PathOpData> pops;
@@ -221,6 +224,8 @@ void IPathManager::ThreadFunc() {
 			}
 			pathOps.swap(pops);
 		}
+
+		SCOPED_TIMER("IPathManager::AsynchronousThread");
 
 		for (std::vector<PathOpData>::iterator i = pops.begin(); i != pops.end(); ++i) {
 			PathOpData &cid = *i;
@@ -270,11 +275,17 @@ void IPathManager::SynchronizeThread() {
 	if (pathBatchThread == NULL)
 		return;
 
+	SCOPED_TIMER("IPathManager::SynchronizeThread"); // lots of waiting here means the asynchronous mechanism is ineffient
+
 	boost::mutex::scoped_lock preqLock(preqMutex);
 	if (!wait) {
 		wait = true;
 		cond.wait(preqLock);
 	}
+	for (std::map<unsigned int, PathData>::iterator i = newPathInfos.begin(); i != newPathInfos.end(); ++i) {
+		pathInfos[i->first] = i->second;
+	}
+	newPathInfos.clear();
 
 	for (std::map<unsigned int, std::vector<PathUpdateData> >::iterator i  = pathUpdates.begin(); i != pathUpdates.end(); ++i) {
 		for (std::vector<PathUpdateData>::iterator v  = i->second.begin(); v != i->second.end(); ++v) {

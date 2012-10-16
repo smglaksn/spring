@@ -66,16 +66,29 @@ public:
 	}
 
 	struct PathData {
-		PathData() : pathID(-1), nextWayPoint(ZeroVector), updated(false) {}
-		PathData(int pID, const float3& nwp) : pathID(pID), nextWayPoint(nwp), updated(false) {}
+		PathData() : pathID(-1), nextWayPoint(ZeroVector), updated(false), deleted(false) {}
+		PathData(int pID, const float3& nwp) : pathID(pID), nextWayPoint(nwp), updated(false), deleted(false) {}
 		int pathID;
 		float3 nextWayPoint;
 		bool updated;
+		bool deleted;
 	};
 
-	PathData* GetPathData(int cid) {
+	PathData* GetPathDataRaw(int cid) {
 		std::map<unsigned int, PathData>::iterator pit = pathInfos.find(cid);
 		return (pit == pathInfos.end()) ? NULL : &(pit->second);
+	}
+
+	PathData* GetPathData(int cid) {
+		PathData* p = GetPathDataRaw(cid);
+		return ((p == NULL) || p->deleted) ? NULL : p;
+	}
+
+	PathData* GetNewPathData(int cid) {
+		PathData* p = GetPathData(cid);
+		if (p != NULL) return p;
+		std::map<unsigned int, PathData>::iterator pit = newPathInfos.find(cid);
+		return ((pit == newPathInfos.end()) || pit->second.deleted) ? NULL : &(pit->second);
 	}
 
 	bool IsFailPath(unsigned int pathID);
@@ -124,6 +137,7 @@ public:
 	};
 
 	std::map<unsigned int, PathData> pathInfos;
+	std::map<unsigned int, PathData> newPathInfos;
 	std::vector<PathOpData> pathOps;
 	std::map<unsigned int, std::vector<PathUpdateData> > pathUpdates;
 	std::map<int, unsigned int> newPathCache;
@@ -264,7 +278,7 @@ public:
 
 	int GetPathID(int cid);
 
-	void ThreadFunc();
+	void AsynchronousThread();
 
 	void SynchronizeThread();
 
