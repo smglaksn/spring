@@ -12,7 +12,11 @@
 class IAtlasAllocator
 {
 public:
+	IAtlasAllocator() : maxsize(2048,2048), npot(false) {}
 	virtual ~IAtlasAllocator() {}
+
+	void SetMaxSize(int xsize, int ysize) { maxsize = int2(xsize, ysize); }
+	void SetNonPowerOfTwo(bool nonPowerOfTwo) { npot = nonPowerOfTwo; }
 
 public:
 	virtual bool Allocate() = 0;
@@ -31,12 +35,18 @@ public:
 
 	float4 GetTexCoords(const std::string& name)
 	{
-		//FIXME adjust texture coordinates by half a pixel (in opengl pixel centers are centeriods)???
 		float4 uv(entries[name].texCoords);
 		uv.x /= atlasSize.x;
 		uv.y /= atlasSize.y;
 		uv.z /= atlasSize.x;
 		uv.w /= atlasSize.y;
+
+		// adjust texture coordinates by half a texel (opengl uses centeroids)
+		uv.x += 0.5f / atlasSize.x;
+		uv.y += 0.5f / atlasSize.y;
+		uv.z += 0.5f / atlasSize.x;
+		uv.w += 0.5f / atlasSize.y;
+
 		return uv;
 	}
 
@@ -54,6 +64,9 @@ protected:
 
 	std::map<std::string, SAtlasEntry> entries;
 	int2 atlasSize;
+
+	int2 maxsize;
+	bool npot;
 };
 
 #endif // IATLAS_ALLOC_H

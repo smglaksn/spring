@@ -8,30 +8,24 @@
 #include <map>
 
 #include "System/creg/creg_cond.h"
+#include "System/float4.h"
+
 
 class IAtlasAllocator;
 
 
-/** @brief Class for combining multiple bitmaps into one large single bitmap. */
-struct AtlasedTexture
+/** @brief texture coordinations of an atlas image. */
+//typedef float4 AtlasedTexture;
+
+struct AtlasedTexture : public float4
 {
-public:
+	AtlasedTexture() : float4() {}
+	AtlasedTexture(const float4& f) : float4(f) {}
+
 	CR_DECLARE_STRUCT(AtlasedTexture);
-
-	AtlasedTexture() { xstart = xend = ystart = yend = 0.0f; }
-
-	AtlasedTexture(const float* v) {
-		xstart = v[0];
-		xend   = v[1];
-		ystart = v[2];
-		yend   = v[3];
-	}
-
-	float xstart;
-	float xend;
-	float ystart;
-	float yend;
 };
+
+
 
 /**
  * @brief Same as AtlasedTexture, but with a different name,
@@ -39,11 +33,11 @@ public:
  */
 struct GroundFXTexture : public AtlasedTexture
 {
-public:
-	CR_DECLARE_STRUCT(AtlasedTexture);
+	CR_DECLARE_STRUCT(GroundFXTexture);
 };
 
 
+/** @brief Class for combining multiple bitmaps into one large single bitmap. */
 class CTextureAtlas
 {
 public:
@@ -120,7 +114,6 @@ protected:
 	std::map<std::string, AtlasedTexture> textures;
 	int maxxsize;
 	int maxysize;
-	int usedPixels;
 	bool initialized;
 
 	int GetBPP(TextureType tetxType);
