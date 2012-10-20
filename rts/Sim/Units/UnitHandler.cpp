@@ -277,31 +277,43 @@ void CUnitHandler::Update()
 		Threading::SetThreadedPath(modInfo.asyncPathFinder);
 		// Use the current thread as thread zero. FIRE!
 		moveTypeStage = UPDATE_MOVETYPE;
-		MoveTypeThreadFunc(0);
+		{
+			ScopedTimer testt("MoveTypeThreadFunc");
+			MoveTypeThreadFunc(0);
+		}
 		Threading::SetMultiThreadedSim(false);
 
 		if (modInfo.asyncPathFinder) {
 			int nBlockOps = 0;
-			// threaded pathing can run also during ExecuteDelayOps, since Block/UnBlock is further delayed
-			for (std::list<CUnit*>::iterator i = activeUnits.begin(); i != activeUnits.end(); ++i) {
-				CUnit* u = *i;
-				if (!u->delayOps.empty()) {
-					int block = u->ExecuteDelayOps(); // can generate new delay ops, but it will execute these also
-					if (block) {
-						CUnit::updateOps[u->id] = block;
-						blockOps[nBlockOps++] = u->id;
+
+			{
+				ScopedTimer testt("BlockOps");
+				// threaded pathing can run also during ExecuteDelayOps, since Block/UnBlock is further delayed
+				for (std::list<CUnit*>::iterator i = activeUnits.begin(); i != activeUnits.end(); ++i) {
+					CUnit* u = *i;
+					if (!u->delayOps.empty()) {
+						int block = u->ExecuteDelayOps(); // can generate new delay ops, but it will execute these also
+						if (block) {
+							CUnit::updateOps[u->id] = block;
+							blockOps[nBlockOps++] = u->id;
+						}
 					}
 				}
 			}
 
+			ScopedTimer testt2("ScopedDisableThreading");
+
 			IPathManager::ScopedDisableThreading sdt;
 
+			ScopedTimer testt3("Block");
 			for (int i = 0; i < nBlockOps; ++i) {
 				int id = blockOps[i];
 				(CUnit::updateOps[id] > 0) ? units[id]->Block() : units[id]->UnBlock();
 			}
+			ScopedTimer testt4("MergePathCaches");
 			if (modInfo.multiThreadSim)
 				pathManager->MergePathCaches();
+			ScopedTimer testt5("UpdateStableData");
 			CSolidObject::UpdateStableData();
 		}
 	}
@@ -370,6 +382,7 @@ void CUnitHandler::Update()
 
 
 inline void UpdateMoveType(CUnit *unit) {
+	ScopedTimer testt2("UpdateMoveTypeFun");
 	UNIT_SANITY_CHECK(unit);
 
 	if (unit->moveType->Update())
