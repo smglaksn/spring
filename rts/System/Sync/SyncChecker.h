@@ -39,8 +39,10 @@ class CSyncChecker {
 		static void NewFrame() { g_checksum = 0xfade1eaf; }
 
 		static void Sync(const void* p, unsigned size) {
+#ifndef UNIT_TEST
 			if (Threading::multiThreadedSim)
 				return; // the current "sync" implementation is obviously not MT compatible :(
+#endif
 			// most common cases first, make it easy for compiler to optimize for it
 			// simple xor is not enough to detect multiple zeroes, e.g.
 #ifdef TRACE_SYNC_HEAVY
