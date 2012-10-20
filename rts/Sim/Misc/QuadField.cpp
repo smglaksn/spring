@@ -219,7 +219,7 @@ inline bool AlreadyProcessed(const CSolidObject *o, const std::vector<int>& quad
 	// using a std::set or even tempNum, which both write to memory while this method only reads
 	const std::vector<int> &oq = o->quads;
 	if (oq.size() > 1) {
-		std::vector<int>::const_iterator qi = quads.cbegin(), oqi = oq.cbegin();
+		std::vector<int>::const_iterator qi = quads.begin(), oqi = oq.begin();
 		while (*qi != *oqi) //! assumes that quads and o->quads are sorted
 			(*qi < *oqi) ? ++qi : ++oqi;
 		if (*qi != curQuad)

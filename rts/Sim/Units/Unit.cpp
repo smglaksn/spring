@@ -2717,7 +2717,7 @@ int CUnit::ExecuteDelayOps() {
 	if (ret > 0) {
 		if (isMarkedOnBlockingMap ? (physicalState == Flying) || !blocking : true)
 			return ret;
-		int2& mP = GetMapPos();
+		const int2& mP = GetMapPos();
 		if (mP.x != mapPos.x || mP.y != mapPos.y)
 			return ret;
 		return 0;
