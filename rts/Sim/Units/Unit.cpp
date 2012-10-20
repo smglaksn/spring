@@ -2715,7 +2715,7 @@ int CUnit::ExecuteDelayOps() {
 		delayOps.pop_front();
 	}
 	if (ret > 0) {
-		if (!isMarkedOnBlockingMap || !blocking)
+		if (isMarkedOnBlockingMap ? (physicalState == Flying) || !blocking : true)
 			return ret;
 		int2& mP = GetMapPos();
 		if (mP.x != mapPos.x || mP.y != mapPos.y)
