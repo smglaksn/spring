@@ -2564,7 +2564,6 @@ void CUnit::QueSmokeProjectile(bool delay) {
 		ASSERT_THREAD_OWNS_UNIT();
 		delayOps.push_back(DelayOp(SMOKE_PROJECTILE));
 	} else {
-		ASSERT_SINGLETHREADED_SIM();
 		new CSmokeProjectile(midPos, gs->randVector() * 0.08f, 100 + gs->randFloat() * 50, 5, 0.2f, this, 0.4f);
 	}
 }
