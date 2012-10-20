@@ -1388,6 +1388,7 @@ void CGame::DrawInputText()
 
 void CGame::StartPlaying()
 {
+	DesyncDetector::StartPlaying();
 	assert(!playing);
 	playing = true;
 	GameSetupDrawer::Disable();

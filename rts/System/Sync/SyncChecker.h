@@ -13,6 +13,7 @@
 	#include "HsiehHash.h"
 #endif
 
+#include "DesyncDetector.h"
 #include <assert.h>
 
 /**
@@ -86,6 +87,7 @@ class CSyncChecker {
 			}
 			}
 #endif
+			DesyncDetector::Sync(p, size, g_checksum);
 		}
 
 	private:

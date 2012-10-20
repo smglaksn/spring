@@ -812,6 +812,7 @@
     <ClInclude Include="..\..\System\SafeVector.h" />
     <ClInclude Include="..\..\System\ScopedFPUSettings.h" />
     <ClInclude Include="..\..\System\SpringApp.h" />
+    <ClInclude Include="..\..\System\Sync\DesyncDetector.h" />
     <ClInclude Include="..\..\System\tdf_grammar.h" />
     <ClInclude Include="..\..\System\TdfParser.h" />
     <ClInclude Include="..\..\System\TimeProfiler.h" />
@@ -2081,6 +2082,7 @@
     <ClCompile Include="..\..\System\SafeCStrings.c" />
     <ClCompile Include="..\..\System\SafeVector.cpp" />
     <ClCompile Include="..\..\System\SpringApp.cpp" />
+    <ClCompile Include="..\..\System\Sync\DesyncDetector.cpp" />
     <ClCompile Include="..\..\System\TdfParser.cpp" />
     <ClCompile Include="..\..\System\TimeProfiler.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug+MT|Win32'">
