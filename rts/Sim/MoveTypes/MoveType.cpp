@@ -91,6 +91,7 @@ void AMoveType::SlowUpdate()
 
 void AMoveType::KeepPointingTo(CUnit* unit, float distance, bool aggressive)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	KeepPointingTo(float3(unit->pos), distance, aggressive);
 }
 

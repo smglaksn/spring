@@ -620,6 +620,7 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 
 		// mark this block as closed
 		blockStates.nodeMask[ob->nodeNum] |= PATHOPT_CLOSED;
+		dirtyBlocks.push_back(ob->nodeNum);
 	}
 
 	// we found our goal

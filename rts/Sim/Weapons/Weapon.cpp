@@ -550,6 +550,7 @@ bool CWeapon::AttackGround(float3 newTargetPos, bool isUserTarget)
 
 bool CWeapon::AttackUnit(CUnit* newTargetUnit, bool isUserTarget)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	if ((!isUserTarget && weaponDef->noAutoTarget)) {
 		return false;
 	}

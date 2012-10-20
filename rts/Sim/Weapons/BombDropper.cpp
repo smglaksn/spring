@@ -79,6 +79,7 @@ void CBombDropper::Update()
 
 bool CBombDropper::TryTarget(const float3& pos, bool userTarget, CUnit* unit)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	if (unit) {
 		if (unit->isUnderWater && !dropTorpedoes) {
 			return false;

@@ -2040,6 +2040,7 @@ void CGroundMoveType::LeaveTransport()
 
 
 void CGroundMoveType::KeepPointingTo(float3 pos, float distance, bool aggressive) {
+	ASSERT_SINGLETHREADED_SIM();
 	mainHeadingPos = pos;
 	useMainHeading = aggressive;
 
@@ -2076,6 +2077,7 @@ void CGroundMoveType::KeepPointingTo(float3 pos, float distance, bool aggressive
 }
 
 void CGroundMoveType::KeepPointingTo(CUnit* unit, float distance, bool aggressive) {
+	ASSERT_SINGLETHREADED_SIM();
 	//! wrapper
 	KeepPointingTo(unit->pos, distance, aggressive);
 }

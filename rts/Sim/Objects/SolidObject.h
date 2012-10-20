@@ -95,7 +95,8 @@ public:
 		ADDBUILDPOWER,
 		GETAIRBASEPADPOS,
 		MOVE_UNIT_OLDPOS,
-		CHANGE_TARGETHEADING
+		CHANGE_TARGETHEADING,
+		SMOKE_PROJECTILE
 	};
 	struct DelayOp {
 		DelayOp(DelayOpType t) : type(t), obj(NULL), vec(ZeroVector), damage(0.0f), dmgtype(0) {}

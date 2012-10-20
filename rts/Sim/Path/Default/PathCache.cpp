@@ -30,7 +30,7 @@ CPathCache::~CPathCache()
 
 void CPathCache::AddPath(IPath::Path* path, IPath::SearchResult result, int2 startBlock,int2 goalBlock,float goalRadius,int pathType, const CSolidObject *owner)
 {
-	if (!Threading::multiThreadedSim && cacheQue.size() > 100)
+	if (!Threading::threadedPath && cacheQue.size() > 100)
 		RemoveFrontQueItem();
 
 	unsigned int hash = (unsigned int)((((goalBlock.y * blocksX + goalBlock.x) * blocksZ + startBlock.y) * blocksX) + startBlock.x * (pathType + 1) * max(1.0f, goalRadius));
@@ -46,7 +46,7 @@ void CPathCache::AddPath(IPath::Path* path, IPath::SearchResult result, int2 sta
 	ci->goalRadius = goalRadius;
 	ci->pathType = pathType;
 
-	if (Threading::multiThreadedSim) {
+	if (Threading::threadedPath) {
 		newCachedPaths[owner->id].push_back(ci);
 		return;
 	}
@@ -70,8 +70,10 @@ void CPathCache::Merge() {
 
 			unsigned int hash = (unsigned int)((((ci->goalBlock.y * blocksX + ci->goalBlock.x) * blocksZ + ci->startBlock.y) * blocksX) + ci->startBlock.x * (ci->pathType + 1) * max(1.0f, ci->goalRadius));
 
-			if (cachedPaths.find(hash) != cachedPaths.end())
+			if (cachedPaths.find(hash) != cachedPaths.end()) {
+				delete ci;
 				continue;
+			}
 
 			cachedPaths[hash] = ci;
 

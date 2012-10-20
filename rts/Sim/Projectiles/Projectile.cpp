@@ -59,6 +59,7 @@ CProjectile::CProjectile():
 	projectileType(-1U),
 	collisionFlags(0)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	GML::GetTicks(lastProjUpdate);
 }
 
@@ -78,6 +79,7 @@ CProjectile::CProjectile(const float3& pos, const float3& spd, CUnit* owner, boo
 	projectileType(-1U),
 	collisionFlags(0)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	Init(ZeroVector, owner);
 	GML::GetTicks(lastProjUpdate);
 }

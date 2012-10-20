@@ -59,6 +59,7 @@
 #include "Sim/MoveTypes/ScriptMoveType.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Projectiles/FlareProjectile.h"
+#include "Sim/Projectiles/Unsynced/SmokeProjectile.h"
 #include "Sim/Projectiles/WeaponProjectiles/MissileProjectile.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
@@ -1566,6 +1567,7 @@ void CUnit::ChangeTeamReset()
 
 bool CUnit::AttackUnit(CUnit* targetUnit, bool isUserTarget, bool wantManualFire, bool fpsMode)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	bool ret = false;
 
 	haveManualFireRequest = wantManualFire;
@@ -1605,6 +1607,7 @@ bool CUnit::AttackUnit(CUnit* targetUnit, bool isUserTarget, bool wantManualFire
 
 bool CUnit::AttackGround(const float3& pos, bool isUserTarget, bool wantManualFire, bool fpsMode)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	bool ret = false;
 
 	// remember whether this was a user-order for SlowUpdateWeapons
@@ -1753,6 +1756,7 @@ __attribute__ ((force_align_arg_pointer))
 #endif
 bool CUnit::AddBuildPower(float amount, CUnit* builder)
 {
+	ASSERT_SINGLETHREADED_SIM();
 	// stop decaying on building AND reclaim
 	lastNanoAdd = gs->frameNum;
 
@@ -2551,6 +2555,17 @@ void CUnit::QueChangeTargetHeading(int heading, bool delay) {
 	}
 }
 
+void CUnit::QueSmokeProjectile(bool delay) {
+	if (delay) {
+		ASSERT_THREAD_OWNS_UNIT();
+		delayOps.push_back(DelayOp(SMOKE_PROJECTILE));
+	} else {
+		ASSERT_SINGLETHREADED_SIM();
+		new CSmokeProjectile(midPos, gs->randVector() * 0.08f, 100 + gs->randFloat() * 50, 5, 0.2f, this, 0.4f);
+	}
+}
+
+
 void CUnit::QueUpdateLOS(bool delay) {
 	if (delay) {
 		ASSERT_THREAD_OWNS_UNIT();
@@ -2687,6 +2702,9 @@ int CUnit::ExecuteDelayOps() {
 				break;
 			case CHANGE_TARGETHEADING:
 				QueChangeTargetHeading(d.data, false);
+				break;
+			case SMOKE_PROJECTILE:
+				QueSmokeProjectile(false);
 				break;
 			default:
 				LOG_L(L_ERROR, "Unknown delay operation: %d", d.type);

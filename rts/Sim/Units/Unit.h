@@ -583,6 +583,7 @@ public:
 	void QueGetAirBasePadPos(CSolidObject *o, bool delay = Threading::multiThreadedSim);
 	void QueMoveUnitOldPos(CSolidObject *o, bool delay = Threading::multiThreadedSim);
 	void QueChangeTargetHeading(int heading, bool delay = Threading::multiThreadedSim);
+	void QueSmokeProjectile(bool delay = Threading::multiThreadedSim);
 	void QueUpdateLOS(bool delay = Threading::multiThreadedSim);
 	void QueUpdateRadar(bool delay = Threading::multiThreadedSim);
 	void QueUpdateQuad(bool delay = Threading::multiThreadedSim);

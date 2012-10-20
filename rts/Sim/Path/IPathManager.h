@@ -98,7 +98,7 @@ public:
 		PathOpData(PathRequestType tp, unsigned int pID, const MoveDef* md, const float3& sp, const float3& gp, float gr, const CSolidObject* own, bool sync):
 		type(tp), moveDef(md), startPos(sp), goalPos(gp), goalRadius(gr), owner(own), synced(sync), pathID(pID), numRetries(0) {}
 		PathOpData(PathRequestType tp, const CSolidObject* own, unsigned int pID):
-		type(tp), moveDef(NULL), startPos(ZeroVector), minDistance(0.0f), owner(own), synced(false), pathID(pID), numRetries(0) {}
+		type(tp), moveDef(NULL), startPos(ZeroVector), goalPos(ZeroVector), minDistance(0.0f), owner(own), synced(false), pathID(pID), numRetries(0) {}
 		PathOpData(PathRequestType tp, unsigned int pID):
 		type(tp), moveDef(NULL), startPos(ZeroVector), goalPos(ZeroVector), minDistance(0.0f), owner(NULL), synced(false), pathID(pID), numRetries(0) {}
 		PathOpData(PathRequestType tp, unsigned int pID, const float3& callPos, float minDist, int nRet, const CSolidObject* own, bool sync):

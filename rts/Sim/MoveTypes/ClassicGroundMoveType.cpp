@@ -1500,6 +1500,7 @@ bool CClassicGroundMoveType::CheckGoalFeasability()
 
 
 void CClassicGroundMoveType::KeepPointingTo(float3 pos, float distance, bool aggressive){
+	ASSERT_SINGLETHREADED_SIM();
 	mainHeadingPos = pos;
 	useMainHeading = aggressive;
 
@@ -1529,6 +1530,7 @@ void CClassicGroundMoveType::KeepPointingTo(float3 pos, float distance, bool agg
 }
 
 void CClassicGroundMoveType::KeepPointingTo(CUnit* unit, float distance, bool aggressive) {
+	ASSERT_SINGLETHREADED_SIM();
 	KeepPointingTo(unit->pos, distance, aggressive);
 }
 
