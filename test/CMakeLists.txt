@@ -95,6 +95,7 @@ Else  (NOT Boost_FOUND)
 	Set(test_SyncedPrimitive_src
 			"${CMAKE_CURRENT_SOURCE_DIR}/engine/System/Sync/TestSyncedPrimitive.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Sync/SyncChecker.cpp"
+			"${ENGINE_SOURCE_DIR}/System/Platform/Threading.cpp"
 		)
 
 	ADD_EXECUTABLE(test_SyncedPrimitive ${test_SyncedPrimitive_src})
