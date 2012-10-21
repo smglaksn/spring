@@ -7,6 +7,7 @@
 #include <boost/thread/locks.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/detail/atomic_count.hpp>
 
 
 namespace Threading {
@@ -63,6 +64,16 @@ public:
 	}
 };
 
+class AtomicCount : public boost::detail::atomic_count {
+public:
+	AtomicCount(long val) : boost::detail::atomic_count(val) {}
+	~AtomicCount() {} // workaround because boost::detail::atomic_count has no destructor
+	void operator=(long val) {
+		this->~AtomicCount();
+		new (this) AtomicCount(val); // LOL!
+	}
 };
+
+}
 
 #endif // SYNCHRO_H

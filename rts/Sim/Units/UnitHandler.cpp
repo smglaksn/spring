@@ -71,7 +71,7 @@ CUnitHandler::CUnitHandler()
 	maxUnits(0),
 	stopThread(false),
 	moveTypeStage(UPDATE_MOVETYPE),
-	unitCount(NULL),
+	atomicCount(-1),
 	simBarrier(NULL)
 {
 	// note: the number of active teams can change at run-time, so
@@ -215,6 +215,7 @@ void CUnitHandler::DeleteUnitNow(CUnit* delUnit)
 #endif
 }
 
+
 void CUnitHandler::Update()
 {
 	{
@@ -276,43 +277,31 @@ void CUnitHandler::Update()
 		Threading::SetThreadedPath(modInfo.asyncPathFinder);
 		// Use the current thread as thread zero. FIRE!
 		moveTypeStage = UPDATE_MOVETYPE;
-		{
-			ScopedTimer testt("MoveTypeThreadFunc");
-			MoveTypeThreadFunc(0);
-		}
+		MoveTypeThreadFunc(0);
 		Threading::SetMultiThreadedSim(false);
 
 		if (modInfo.asyncPathFinder) {
 			int nBlockOps = 0;
-
-			{
-				ScopedTimer testt("BlockOps");
-				// threaded pathing can run also during ExecuteDelayOps, since Block/UnBlock is further delayed
-				for (std::list<CUnit*>::iterator i = activeUnits.begin(); i != activeUnits.end(); ++i) {
-					CUnit* u = *i;
-					if (!u->delayOps.empty()) {
-						int block = u->ExecuteDelayOps(); // can generate new delay ops, but it will execute these also
-						if (block) {
-							CUnit::updateOps[u->id] = block;
-							blockOps[nBlockOps++] = u->id;
-						}
+			// threaded pathing can run also during ExecuteDelayOps, since Block/UnBlock is further delayed
+			for (std::list<CUnit*>::iterator i = activeUnits.begin(); i != activeUnits.end(); ++i) {
+				CUnit* u = *i;
+				if (!u->delayOps.empty()) {
+					int block = u->ExecuteDelayOps(); // can generate new delay ops, but it will execute these also
+					if (block) {
+						CUnit::updateOps[u->id] = block;
+						blockOps[nBlockOps++] = u->id;
 					}
 				}
 			}
 
-			ScopedTimer testt2("ScopedDisableThreading");
-
 			IPathManager::ScopedDisableThreading sdt;
 
-			ScopedTimer testt3("Block");
 			for (int i = 0; i < nBlockOps; ++i) {
 				int id = blockOps[i];
 				(CUnit::updateOps[id] > 0) ? units[id]->Block() : units[id]->UnBlock();
 			}
-			ScopedTimer testt4("MergePathCaches");
 			if (modInfo.multiThreadSim)
 				pathManager->MergePathCaches();
-			ScopedTimer testt5("UpdateStableData");
 			CSolidObject::UpdateStableData();
 		}
 	}
@@ -381,7 +370,6 @@ void CUnitHandler::Update()
 
 
 inline void UpdateMoveType(CUnit *unit) {
-	ScopedTimer testt2("UpdateMoveTypeFun");
 	UNIT_SANITY_CHECK(unit);
 
 	if (unit->moveType->Update())
@@ -399,74 +387,40 @@ inline void UpdateMoveType(CUnit *unit) {
 
 void CUnitHandler::MoveTypeThreadFunc(int i) {
 	if (simNumExtraThreads > 0) {
-		char str[64];
-		sprintf(str,"MoveTypeThreadFuncA %d", i);
-		ScopedTimer testt5(str);
 		if (i > 0) {
 			streflop::streflop_init<streflop::Simple>();
 			GML::ThreadNumber(GML_MAX_NUM_THREADS + i);
 			Threading::SetAffinityHelper("SimMT", configHandler->GetUnsigned("SetCoreAffinitySimMT"));
 		}
 		do {
-			int lim = 0;
-			{
-
-				sprintf(str,"MoveTypeThreadFuncB %d", i);
-				ScopedTimer testt6(str);
-				if (i == 0) {
-					if (moveTypeStage == UPDATE_MOVETYPE)
-						lim = activeUnits.size();
-					else if (moveTypeStage == SLOW_UPDATE_MOVETYPE)
-						lim = (activeUnits.size() / UNIT_SLOWUPDATE_RATE) + 1;
-					else if (moveTypeStage == DELAYED_SLOW_UPDATE_MOVETYPE)
-						lim = 4;
-					unitCount = new boost::detail::atomic_count(lim);
-					if (moveTypeStage == SLOW_UPDATE_MOVETYPE)
-						memset(CUnit::updateOps, 0, sizeof(CUnit::updateOps));
-				}
+			if (i == 0) {
+				atomicCount = -1;
+				if (moveTypeStage == SLOW_UPDATE_MOVETYPE)
+					memset(CUnit::updateOps, 0, sizeof(CUnit::updateOps));
 			}
-			{
-				sprintf(str,"MoveTypeThreadFuncC %d", i);
-				ScopedTimer testt7(str);
-				simBarrier->wait();
-				if (stopThread)
-					break;
-			}
-			if (i > 0) {
-				if (moveTypeStage == UPDATE_MOVETYPE)
-					lim = activeUnits.size();
-				else if (moveTypeStage == SLOW_UPDATE_MOVETYPE)
-					lim = (activeUnits.size() / UNIT_SLOWUPDATE_RATE) + 1;
-				else if (moveTypeStage == DELAYED_SLOW_UPDATE_MOVETYPE)
-					lim = 4;
-			}
-			int curPos = lim - 1;
-			sprintf(str,"MoveTypeThreadFuncD %d", i);
-			ScopedTimer testt8(str);
+			simBarrier->wait();
+			if (stopThread)
+				break;
+			int curPos = 0;
 			if (moveTypeStage == UPDATE_MOVETYPE) {
-				sprintf(str,"MoveTypeThreadFuncE %d", i);
-				ScopedTimer testt9(str);
-
 				std::list<CUnit*>::iterator usi = activeUnits.begin();
 				while(true) {
-					int nextPos = --*unitCount;
-					if (nextPos < 0) break;
-					while(curPos > nextPos) { ++usi; --curPos; }
+					int nextPos = ++atomicCount;
+					if (nextPos >= activeUnits.size()) break;
+					while(curPos < nextPos) { ++usi; ++curPos; }
 
 					CUnit *unit = *usi;
 					Threading::SetThreadCurrentUnitID(unit->id);
 					UpdateMoveType(unit);
 				}
 			} else if (moveTypeStage == SLOW_UPDATE_MOVETYPE) {
-				sprintf(str,"MoveTypeThreadFuncG %d", i);
-				ScopedTimer testt10(str);
 				std::list<CUnit*>::iterator sui = ((gs->frameNum & (UNIT_SLOWUPDATE_RATE - 1)) == 0) ? activeUnits.begin() : slowUpdateIterator;
 				int n = (activeUnits.size() / UNIT_SLOWUPDATE_RATE) + 1;
 
 				while(true) {
-					int nextPos = --*unitCount;
-					if (nextPos < 0) break;
-					while(curPos > nextPos && sui != activeUnits.end()) { ++sui; --curPos; }
+					int nextPos = ++atomicCount;
+					if (nextPos >= n) break;
+					while(curPos < nextPos && sui != activeUnits.end()) { ++sui; ++curPos; }
 					if (sui == activeUnits.end()) break;
 
 					CUnit *unit = *sui;
@@ -474,13 +428,11 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 					unit->moveType->SlowUpdate();
 				}
 			} else if (moveTypeStage == DELAYED_SLOW_UPDATE_MOVETYPE) {
-				sprintf(str,"MoveTypeThreadFuncH %d", i);
-				ScopedTimer testt11(str);
 				while(true) {
-					int nextPos = --*unitCount;
-					if (nextPos < 0)
+					int nextPos = ++atomicCount;
+					if (nextPos > 3)
 						break;
-					switch(curPos - nextPos) {
+					switch(nextPos) {
 						case 0:
 							for (int i = 0; i < MAX_UNITS; ++i) {
 								if (CUnit::updateOps[i] & CUnit::UPDATE_LOS) {
@@ -514,15 +466,10 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 					}
 				}
 			}
-			sprintf(str,"MoveTypeThreadFuncI %d", i);
-			ScopedTimer testt12(str);
 			simBarrier->wait();
 		} while (i > 0);
-		if (i == 0)
-			delete unitCount;
 	}
 	else {
-		SCOPED_TIMER("Unit::MoveType::SingleSlowUpdate");
 		if (moveTypeStage == UPDATE_MOVETYPE) {
 			for (std::list<CUnit*>::iterator usi = activeUnits.begin(); usi != activeUnits.end(); ++usi) {
 				CUnit *unit = *usi;
