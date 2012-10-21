@@ -7,7 +7,6 @@
 #include <boost/thread/locks.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/detail/atomic_count.hpp>
 
 
 namespace Threading {
@@ -62,35 +61,6 @@ public:
 		((boost::mutex::scoped_lock*)sl_lock)->~scoped_lock();
 #endif
 	}
-};
-
-class AtomicCount : public boost::detail::atomic_count {
-public:
-	static const long hlongmax = LONG_MAX/2;
-	long refval;
-
-	AtomicCount(long ref) : boost::detail::atomic_count(hlongmax), refval(ref) {}
-	~AtomicCount() {} // workaround because boost::detail::atomic_count has no destructor
-
-	void operator=(long ref) {
-		this->~AtomicCount();
-		new (this) AtomicCount(ref); // LOL!
-	}
-
-    long operator++()
-    {
-        return refval + (hlongmax - boost::detail::atomic_count::operator--());
-    }
-
-    long operator--()
-    {
-        return  refval + (hlongmax - boost::detail::atomic_count::operator++());
-    }
-
-    operator long() const
-    {
-		return  refval + (hlongmax - boost::detail::atomic_count::operator long());
-    }
 };
 
 }

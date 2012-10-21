@@ -10,7 +10,7 @@
 #include "UnitSet.h"
 #include "CommandAI/Command.h"
 #include <boost/thread/barrier.hpp>
-#include "System/Platform/Synchro.h"
+#include <boost/detail/atomic_count.hpp>
 
 class CUnit;
 class CBuilderCAI;
@@ -97,7 +97,7 @@ private:
 	int simNumExtraThreads;
 	boost::barrier* simBarrier;
 	boost::thread* simThreads[GML_MAX_NUM_THREADS];
-	Threading::AtomicCount atomicCount;
+	boost::detail::atomic_count* atomicCount;
 	volatile bool stopThread;
 	enum MoveTypeStage { UPDATE_MOVETYPE, SLOW_UPDATE_MOVETYPE, DELAYED_SLOW_UPDATE_MOVETYPE};
 	volatile MoveTypeStage moveTypeStage;
