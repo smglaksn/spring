@@ -71,7 +71,7 @@ CUnitHandler::CUnitHandler()
 	maxUnits(0),
 	stopThread(false),
 	moveTypeStage(UPDATE_MOVETYPE),
-	atomicCount(-1),
+	atomicCount(1),
 	simBarrier(NULL)
 {
 	// note: the number of active teams can change at run-time, so
@@ -394,7 +394,7 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 		}
 		do {
 			if (i == 0) {
-				atomicCount = -1;
+				atomicCount = 1;
 				if (moveTypeStage == SLOW_UPDATE_MOVETYPE)
 					memset(CUnit::updateOps, 0, sizeof(CUnit::updateOps));
 			}
@@ -405,7 +405,7 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 			if (moveTypeStage == UPDATE_MOVETYPE) {
 				std::list<CUnit*>::iterator usi = activeUnits.begin();
 				while(true) {
-					int nextPos = ++atomicCount;
+					int nextPos = -(--atomicCount);
 					if (nextPos >= activeUnits.size()) break;
 					while(curPos < nextPos) { ++usi; ++curPos; }
 
@@ -418,7 +418,7 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 				int n = (activeUnits.size() / UNIT_SLOWUPDATE_RATE) + 1;
 
 				while(true) {
-					int nextPos = ++atomicCount;
+					int nextPos = -(--atomicCount);
 					if (nextPos >= n) break;
 					while(curPos < nextPos && sui != activeUnits.end()) { ++sui; ++curPos; }
 					if (sui == activeUnits.end()) break;
@@ -429,7 +429,7 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 				}
 			} else if (moveTypeStage == DELAYED_SLOW_UPDATE_MOVETYPE) {
 				while(true) {
-					int nextPos = ++atomicCount;
+					int nextPos = -(--atomicCount);
 					if (nextPos > 3)
 						break;
 					switch(nextPos) {
