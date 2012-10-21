@@ -394,7 +394,7 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 		}
 		do {
 			if (i == 0) {
-				atomicCount = new boost::detail::atomic_count(-1);
+				atomicCount = new boost::detail::atomic_count(1);
 				if (moveTypeStage == SLOW_UPDATE_MOVETYPE)
 					memset(CUnit::updateOps, 0, sizeof(CUnit::updateOps));
 			}
