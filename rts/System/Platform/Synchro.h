@@ -66,12 +66,31 @@ public:
 
 class AtomicCount : public boost::detail::atomic_count {
 public:
-	AtomicCount(long val) : boost::detail::atomic_count(val) {}
+	static const long hlongmax = LONG_MAX/2;
+	long refval;
+
+	AtomicCount(long ref) : boost::detail::atomic_count(hlongmax), refval(ref) {}
 	~AtomicCount() {} // workaround because boost::detail::atomic_count has no destructor
-	void operator=(long val) {
+
+	void operator=(long ref) {
 		this->~AtomicCount();
-		new (this) AtomicCount(val); // LOL!
+		new (this) AtomicCount(ref); // LOL!
 	}
+
+    long operator++()
+    {
+        return refval + (hlongmax - boost::detail::atomic_count::operator--());
+    }
+
+    long operator--()
+    {
+        return  refval + (hlongmax - boost::detail::atomic_count::operator++());
+    }
+
+    operator long() const
+    {
+		return  refval + (hlongmax - boost::detail::atomic_count::operator long());
+    }
 };
 
 }
