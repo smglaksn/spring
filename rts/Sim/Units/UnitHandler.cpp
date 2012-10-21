@@ -449,14 +449,9 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 
 				std::list<CUnit*>::iterator usi = activeUnits.begin();
 				while(true) {
-					{
-						sprintf(str,"MoveTypeThreadFuncF %d", i);
-						ScopedTimer testt24(str);
-
-						int nextPos = --*unitCount;
-						if (nextPos < 0) break;
-						while(curPos > nextPos) { ++usi; --curPos; }
-					}
+					int nextPos = --*unitCount;
+					if (nextPos < 0) break;
+					while(curPos > nextPos) { ++usi; --curPos; }
 
 					CUnit *unit = *usi;
 					Threading::SetThreadCurrentUnitID(unit->id);
