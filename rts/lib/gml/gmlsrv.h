@@ -11,6 +11,7 @@
 #define GMLSRV_H
 
 #ifdef USE_GML
+#include "System/Config/ConfigHandler.h"
 #include "System/OffscreenGLContext.h"
 #include <boost/thread/thread.hpp>
 #include <boost/thread/barrier.hpp>
