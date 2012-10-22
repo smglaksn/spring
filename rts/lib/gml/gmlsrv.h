@@ -356,6 +356,9 @@ public:
 	void gmlClient() {
 		long thr = ++threadcnt;
 		set_threadnum(thr + 2);
+		char threadName[32];
+		sprintf(threadName,"RenderMT%d", thr);
+		Threading::SetAffinityHelper(threadName, configHandler->GetUnsigned("SetCoreAffinityRenderMT"));
 		if (gmlShareLists) {
 			ogc[thr]->WorkerThreadPost();
 		}
