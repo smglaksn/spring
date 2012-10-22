@@ -403,7 +403,7 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 					countStart = (activeUnits.size() / UNIT_SLOWUPDATE_RATE) + 1;
 				else if (moveTypeStage == DELAYED_SLOW_UPDATE_MOVETYPE)
 					countStart = 4;
-				atomicCount = new boost::detail::atomic_count(countStart);
+				atomicCount = new boost::detail::atomic_count(-1);
 				atomicCountStart = countStart;
 				if (moveTypeStage == SLOW_UPDATE_MOVETYPE)
 					memset(CUnit::updateOps, 0, sizeof(CUnit::updateOps));
@@ -411,13 +411,15 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 			simBarrier->wait();
 			if (stopThread)
 				break;
-			int curPos = ((i == 0) ? countStart : atomicCountStart) - 1;
+			if (i > 0)
+				countStart = atomicCountStart;
+			int curPos = 0;
 			if (moveTypeStage == UPDATE_MOVETYPE) {
 				std::list<CUnit*>::iterator usi = activeUnits.begin();
 				while(true) {
-					int nextPos = --*atomicCount;
-					if (nextPos < 0) break;
-					while(curPos > nextPos) { ++usi; --curPos; }
+					int nextPos = ++*atomicCount;
+					if (nextPos >= countStart) break;
+					while(curPos < nextPos) { ++usi; ++curPos; }
 
 					CUnit *unit = *usi;
 					Threading::SetThreadCurrentUnitID(unit->id);
@@ -427,9 +429,9 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 				std::list<CUnit*>::iterator sui = ((gs->frameNum & (UNIT_SLOWUPDATE_RATE - 1)) == 0) ? activeUnits.begin() : slowUpdateIterator;
 
 				while(true) {
-					int nextPos = --*atomicCount;
-					if (nextPos < 0) break;
-					while(curPos > nextPos && sui != activeUnits.end()) { ++sui; --curPos; }
+					int nextPos = ++*atomicCount;
+					if (nextPos >= countStart) break;
+					while(curPos < nextPos && sui != activeUnits.end()) { ++sui; ++curPos; }
 					if (sui == activeUnits.end()) break;
 
 					CUnit *unit = *sui;
@@ -438,10 +440,10 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 				}
 			} else if (moveTypeStage == DELAYED_SLOW_UPDATE_MOVETYPE) {
 				while(true) {
-					int nextPos = --*atomicCount;
-					if (nextPos < 0)
+					int nextPos = ++*atomicCount;
+					if (nextPos >= countStart)
 						break;
-					switch(curPos - nextPos) {
+					switch(nextPos) {
 						case 0:
 							for (int i = 0; i < MAX_UNITS; ++i) {
 								if (CUnit::updateOps[i] & CUnit::UPDATE_LOS) {
