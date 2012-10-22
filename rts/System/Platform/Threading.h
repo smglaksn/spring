@@ -16,7 +16,7 @@
 #include <boost/cstdint.hpp>
 #include "lib/gml/gml_base.h"
 #include "System/Platform/ThreadingConfig.h"
-#include "lib/boost/atomic.hpp"
+//#include "lib/boost/atomic.hpp"
 
 #define DEBUG_MULTITHREADED_SIM (0 && GML_ENABLE_SIM) // enable debug output, requires GML
 #define DEBUG_THREADED_PATH (0 && GML_ENABLE_SIM) // enable debug output, requires GML
@@ -183,7 +183,7 @@ namespace Threading {
 		volatile __attribute__ ((aligned (4))) boost::int32_t num;
 	#endif
 	};
-
+	/*
 	struct AtomicCount {
 		AtomicCount(int c) : cnt(c) {}
 		boost::atomic<int> cnt;
@@ -192,7 +192,7 @@ namespace Threading {
 			return cnt.fetch_add(1, boost::memory_order_relaxed) + 1;
 		}
 	};
-
+	*/
 }
 
 #endif // _THREADING_H_
