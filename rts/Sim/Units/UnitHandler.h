@@ -97,7 +97,7 @@ private:
 	int simNumExtraThreads;
 	boost::barrier* simBarrier;
 	boost::thread* simThreads[GML_MAX_NUM_THREADS];
-	boost::detail::atomic_count* atomicCount;
+	boost::detail::atomic_count *unitCount;
 	volatile bool stopThread;
 	enum MoveTypeStage { UPDATE_MOVETYPE, SLOW_UPDATE_MOVETYPE, DELAYED_SLOW_UPDATE_MOVETYPE};
 	volatile MoveTypeStage moveTypeStage;

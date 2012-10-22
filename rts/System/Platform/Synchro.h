@@ -63,6 +63,6 @@ public:
 	}
 };
 
-}
+};
 
 #endif // SYNCHRO_H
