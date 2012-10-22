@@ -11,6 +11,7 @@
 #define GMLSRV_H
 
 #ifdef USE_GML
+#include "System/Config/ConfigHandler.h"
 #include "System/OffscreenGLContext.h"
 #include <boost/thread/thread.hpp>
 #include <boost/thread/barrier.hpp>
@@ -356,6 +357,9 @@ public:
 	void gmlClient() {
 		long thr = ++threadcnt;
 		set_threadnum(thr + 2);
+		char threadName[32];
+		sprintf(threadName,"RenderMT%d", thr);
+		Threading::SetAffinityHelper(threadName, configHandler->GetUnsigned("SetCoreAffinityRenderMT"));
 		if (gmlShareLists) {
 			ogc[thr]->WorkerThreadPost();
 		}

@@ -16,6 +16,7 @@
 #include <boost/cstdint.hpp>
 #include "lib/gml/gml_base.h"
 #include "System/Platform/ThreadingConfig.h"
+#include <boost/atomic.hpp>
 
 #define DEBUG_MULTITHREADED_SIM (0 && GML_ENABLE_SIM) // enable debug output, requires GML
 #define DEBUG_THREADED_PATH (0 && GML_ENABLE_SIM) // enable debug output, requires GML
@@ -141,7 +142,7 @@ namespace Threading {
 	#elif defined(__APPLE__)
 			return OSAtomicIncrement64(&num);
 	#else // assuming GCC (__sync_fetch_and_add is a builtin)
-			return __sync_fetch_and_add(&num, boost::int64_t(1));
+			return __sync_fetch_and_add(&num, boost::int64_t(1)) + 1;
 	#endif
 		}
 	private:
@@ -151,6 +152,47 @@ namespace Threading {
 		volatile __attribute__ ((aligned (8))) boost::int64_t num;
 	#endif
 	};
+
+	struct AtomicCounterInt {
+	public:
+		AtomicCounterInt(boost::int32_t start = 0) : num(start) {}
+
+		boost::int32_t operator=(boost::int32_t val) {
+	#ifdef _MSC_VER
+			InterlockedExchange((volatile unsigned int *)&num, val);
+	#elif defined(__APPLE__)
+			OSAtomicTestAndSet(&(boost::uint32_t*)num, val);
+	#else // assuming GCC (__sync_fetch_and_add is a builtin)
+			__sync_lock_test_and_set(&num, boost::int32_t(1));
+	#endif
+			return val;
+		}
+		boost::int32_t operator++() {
+	#ifdef _MSC_VER
+			return InterlockedIncrement((volatile unsigned int*)&num);
+	#elif defined(__APPLE__)
+			return OSAtomicIncrement32(&num);
+	#else // assuming GCC (__sync_fetch_and_add is a builtin)
+			return __sync_fetch_and_add(&num, boost::int32_t(1)) + 1;
+	#endif
+		}
+	private:
+	#ifdef _MSC_VER
+		volatile __declspec(align(4)) boost::int32_t num;
+	#else
+		volatile __attribute__ ((aligned (4))) boost::int32_t num;
+	#endif
+	};
+
+	struct AtomicCount {
+		AtomicCount(int c) : cnt(c) {}
+		boost::atomic<int> cnt;
+		int operator=(int c) { cnt.exchange(c, boost::memory_order_relaxed); return c; }
+		int operator++() {
+			return cnt.fetch_add(1, boost::memory_order_relaxed) + 1;
+		}
+	};
+
 }
 
 #endif // _THREADING_H_

@@ -390,11 +390,13 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 		if (i > 0) {
 			streflop::streflop_init<streflop::Simple>();
 			GML::ThreadNumber(GML_MAX_NUM_THREADS + i);
-			Threading::SetAffinityHelper("SimMT", configHandler->GetUnsigned("SetCoreAffinitySimMT"));
+			char threadName[32];
+			sprintf(threadName,"SimMT%d", i);
+			Threading::SetAffinityHelper(threadName, configHandler->GetUnsigned("SetCoreAffinitySimMT"));
 		}
 		do {
 			if (i == 0) {
-				unitCount %= -1;
+				unitCount = -1;
 				if (moveTypeStage == SLOW_UPDATE_MOVETYPE)
 					memset(CUnit::updateOps, 0, sizeof(CUnit::updateOps));
 			}
