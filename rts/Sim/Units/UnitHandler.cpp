@@ -72,7 +72,6 @@ CUnitHandler::CUnitHandler()
 	stopThread(false),
 	moveTypeStage(UPDATE_MOVETYPE),
 	atomicCount(-1),
-	atomicCountStart(0),
 	simBarrier(NULL)
 {
 	// note: the number of active teams can change at run-time, so
@@ -395,30 +394,22 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 			Threading::SetAffinityHelper(threadName, configHandler->GetUnsigned("SetCoreAffinitySimMT"));
 		}
 		do {
-			int countStart;
 			if (i == 0) {
-				if (moveTypeStage == UPDATE_MOVETYPE)
-					countStart = activeUnits.size();
-				else if (moveTypeStage == SLOW_UPDATE_MOVETYPE)
-					countStart = (activeUnits.size() / UNIT_SLOWUPDATE_RATE) + 1;
-				else if (moveTypeStage == DELAYED_SLOW_UPDATE_MOVETYPE)
-					countStart = 4;
 				atomicCount %= -1;
-				atomicCountStart = countStart;
-				if (moveTypeStage == SLOW_UPDATE_MOVETYPE)
+				if (moveTypeStage == SLOW_UPDATE_MOVETYPE) {
 					memset(CUnit::updateOps, 0, sizeof(CUnit::updateOps));
+				}
 			}
 			simBarrier->wait();
 			if (stopThread)
 				break;
-			if (i > 0)
-				countStart = atomicCountStart;
 			int curPos = 0;
 			if (moveTypeStage == UPDATE_MOVETYPE) {
+				const int countEnd = activeUnits.size();
 				std::list<CUnit*>::iterator usi = activeUnits.begin();
 				while(true) {
 					int nextPos = ++atomicCount;
-					if (nextPos >= countStart) break;
+					if (nextPos >= countEnd) break;
 					while(curPos < nextPos) { ++usi; ++curPos; }
 
 					CUnit *unit = *usi;
@@ -426,11 +417,12 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 					UpdateMoveType(unit);
 				}
 			} else if (moveTypeStage == SLOW_UPDATE_MOVETYPE) {
+				const int countEnd = (activeUnits.size() / UNIT_SLOWUPDATE_RATE) + 1;
 				std::list<CUnit*>::iterator sui = ((gs->frameNum & (UNIT_SLOWUPDATE_RATE - 1)) == 0) ? activeUnits.begin() : slowUpdateIterator;
 
 				while(true) {
 					int nextPos = ++atomicCount;
-					if (nextPos >= countStart) break;
+					if (nextPos >= countEnd) break;
 					while(curPos < nextPos && sui != activeUnits.end()) { ++sui; ++curPos; }
 					if (sui == activeUnits.end()) break;
 
@@ -439,9 +431,10 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 					unit->moveType->SlowUpdate();
 				}
 			} else if (moveTypeStage == DELAYED_SLOW_UPDATE_MOVETYPE) {
+				const int countEnd = 4;
 				while(true) {
 					int nextPos = ++atomicCount;
-					if (nextPos >= countStart)
+					if (nextPos >= countEnd)
 						break;
 					switch(nextPos) {
 						case 0:
