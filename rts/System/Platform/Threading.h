@@ -46,6 +46,12 @@ namespace Threading {
 	boost::uint32_t SetAffinity(boost::uint32_t cores_bitmask, bool hard = true);
 	void SetAffinityHelper(const char *threadName, boost::uint32_t affinity);
 	unsigned GetAvailableCores();
+	unsigned GetPhysicalCores();
+	unsigned GetDefaultAffinity(const char *threadName);
+
+	extern unsigned simThreadCount;
+	inline void SimThreadCount(unsigned stc) { simThreadCount = stc; }
+	inline unsigned SimThreadCount() { return simThreadCount; }
 
 	/**
 	 * Inform the OS kernel that we are a cpu-intensive task
