@@ -196,7 +196,9 @@ void ThreadNotUnitOwnerErrorFunc() { LOG_L(L_ERROR, "Illegal attempt to modify a
 	}
 
 	unsigned GetDefaultAffinity(const char *threadName) {
-		if (!GML::SimEnabled() || !configHandler->GetBool("SetCoreAffinityAuto") ||
+		if ((!GML::SimEnabled() && configHandler->GetInt("SetCoreAffinityAuto") <= 0) ||
+			// affinity is really important with the large number of threads MT uses, so enable by default
+			(GML::SimEnabled() && configHandler->GetInt("SetCoreAffinityAuto") < 0) ||
 			configHandler->GetUnsigned("SetCoreAffinity") > 1 ||
 			configHandler->GetUnsigned("SetCoreAffinitySim") != 0 ||
 			configHandler->GetUnsigned("SetCoreAffinitySimMT") != 0 ||
