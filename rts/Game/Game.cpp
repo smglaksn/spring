@@ -922,6 +922,10 @@ bool CGame::UpdateUnsynced()
 	const float dif = skipping ? 0.010f : difTime * 0.001f;
 	lastModGameTimeMeasure = currentTime;
 
+	globalRendering->lastFrameTime = spring_tomsecs(currentTime - lastDrawFrameTime) / 1000.f;
+	lastDrawFrameTime = currentTime; //FIXME merge with lastModGameTimeMeasure
+	gu->avgDrawFrameTime = mix(gu->avgDrawFrameTime, globalRendering->lastFrameTime * 1000.f, 0.05f);
+
 	// Update game times
 	gu->gameTime += dif;
 	gu->modGameTime += (gs->paused) ? 0.0f : dif * gs->speedFactor;
@@ -1301,14 +1305,6 @@ bool CGame::Draw() {
 
 	glEnable(GL_DEPTH_TEST);
 	glLoadIdentity();
-
-	const spring_time currentTimePostDraw = spring_gettime();
-
-	globalRendering->lastFrameTime = spring_tomsecs(currentTimePostDraw - lastDrawFrameTime) / 1000.f;
-	lastDrawFrameTime = currentTimePostDraw;
-
-	// do not count the video-capturing time since it runs in a separate thread
-	gu->avgDrawFrameTime = mix(gu->avgDrawFrameTime, float(spring_tomsecs(currentTimePostDraw - currentTimePreDraw)), 0.05f);
 
 	videoCapturing->RenderFrame();
 
@@ -1776,7 +1772,7 @@ void CGame::DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod
 			file << "\t\t\t\tname: " << omp->name << " (parentName: " << omp->parentName << ")\n";
 			file << "\t\t\t\tpos: <" << ppos.x << ", " << ppos.y << ", " << ppos.z << ">\n";
 			file << "\t\t\t\trot: <" << prot.x << ", " << prot.y << ", " << prot.z << ">\n";
-			file << "\t\t\t\tvisible: " << lmp->visible << "\n";
+			file << "\t\t\t\tvisible: " << lmp->scriptSetVisible << "\n";
 			file << "\n";
 		}
 		#endif
