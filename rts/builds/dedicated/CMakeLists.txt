@@ -93,6 +93,7 @@ SET(system_files
 	${ENGINE_SRC_ROOT_DIR}/System/LoadSave/DemoRecorder
 	${ENGINE_SRC_ROOT_DIR}/System/AutohostInterface
 	${ENGINE_SRC_ROOT_DIR}/System/SafeCStrings
+	${ENGINE_SRC_ROOT_DIR}/System/Sync/FPUCheck
 	${ENGINE_SRC_ROOT_DIR}/System/UnsyncedRNG
 	${ENGINE_SRC_ROOT_DIR}/System/Util
 	${ENGINE_SRC_ROOT_DIR}/System/float4

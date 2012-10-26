@@ -166,7 +166,6 @@ void ThreadNotUnitOwnerErrorFunc() { LOG_L(L_ERROR, "Illegal attempt to modify a
 		}
 	}
 
-#ifndef DEDICATED
 	unsigned GetPhysicalCores() {
 		unsigned regs[4];
 		memset(regs, 0, sizeof(regs));
@@ -191,7 +190,6 @@ void ThreadNotUnitOwnerErrorFunc() { LOG_L(L_ERROR, "Illegal attempt to modify a
 		}
 		return threads;
 	}
-#endif
 
 	unsigned GetDefaultAffinity(const char *threadName) {
 		if ((!GML::SimEnabled() && configHandler->GetInt("SetCoreAffinityAuto") <= 0) ||
