@@ -192,13 +192,14 @@ unsigned int IPathManager::RequestPath(
 		if (!Threading::threadedPath) {
 			if (!modInfo.asyncPathFinder)
 				return RequestPath(ST_CALL moveDef, startPos, goalPos, goalRadius, caller, synced);
-			int cid = ++pathRequestID;
+			unsigned int cid;
+			do { cid = ++pathRequestID; } while ((cid == 0) || (pathInfos.find(cid) != pathInfos.end()));
 			pathInfos[cid] = PathData(RequestPath(ST_CALL moveDef, startPos, goalPos, goalRadius, caller, synced), startPos);
 			return cid;
 		}
-		int cid;
+		unsigned int cid;
 		NOTIFY_PATH_THREAD(
-			cid = ++pathRequestID;
+			do { cid = ++pathRequestID; } while ((cid == 0) || (pathInfos.find(cid) != pathInfos.end()));
 			newPathInfos[cid] = PathData(-1, startPos);
 			pathOps.push_back(PathOpData(REQUEST_PATH, cid, moveDef, startPos, goalPos, goalRadius, caller, synced));
 		)

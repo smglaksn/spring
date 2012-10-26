@@ -190,7 +190,9 @@ Store a new multipath into the pathmap.
 */
 unsigned int CPathManager::Store(MultiPath* path)
 {
-	pathMap[++nextPathID] = path;
+	unsigned int npi; // overflow can desync the simulation, but it would take a HUGE game
+	do { npi = ++nextPathID; } while ((npi == 0) || (pathMap.find(npi) != pathMap.end()));
+	pathMap[npi] = path;
 	return nextPathID;
 }
 

@@ -831,7 +831,9 @@ unsigned int QTPFS::PathManager::QueueSearch(
 		// NOTE:
 		//     the unclamped end-points are temporary
 		//     zero is a reserved ID, so pre-increment
-		newPath->SetID(++numPathRequests);
+		unsigned int npr; // overflow can desync the simulation, but it would take a HUGE game
+		do { npr = ++numPathRequests; } while ((npr == 0) || (pathTypes.find(npr) != pathTypes.end()));
+		newPath->SetID(npr);
 		newPath->SetRadius(radius);
 		newPath->SetSynced(synced);
 		newPath->AllocPoints(2);
