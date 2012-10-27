@@ -117,7 +117,7 @@ public:
 		float3 vec;
 		union {
 			float damage, mult, amount;
-			bool relative, crush, bset;
+			bool relative, crush, bset, deathseq;
 		};
 		union {
 			int dmgtype;

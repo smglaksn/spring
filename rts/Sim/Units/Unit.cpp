@@ -2405,12 +2405,12 @@ void CUnit::QueBuggerOff(bool delay) {
 		helper->BuggerOff(pos + frontdir * radius, radius, true, false, team, this);
 	}
 }
-void CUnit::QueKillUnit(bool delay) {
+void CUnit::QueKillUnit(bool deathseq, bool delay) {
 	if (delay) {
 		ASSERT_THREAD_OWNS_UNIT();
-		delayOps.push_back(DelayOp(KILLUNIT));
+		delayOps.push_back(DelayOp(KILLUNIT, deathseq));
 	} else {
-		KillUnit(true, false, NULL, false);
+		KillUnit(true, false, NULL, deathseq);
 	}
 }
 void CUnit::QueMove(bool delay) {
@@ -2667,7 +2667,7 @@ int CUnit::ExecuteDelayOps() {
 				QueBuggerOff(false);
 				break;
 			case KILLUNIT:
-				QueKillUnit(false);
+				QueKillUnit(d.deathseq, false);
 				break;
 			case MOVE:
 				QueMove(false);

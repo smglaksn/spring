@@ -568,7 +568,7 @@ public:
 	void QueUnitUnitCollision(const CUnit *u, bool delay = Threading::multiThreadedSim);
 	void QueUnitFeatureCollision(const CSolidObject *f, bool delay = Threading::multiThreadedSim);
 	void QueBuggerOff(bool delay = Threading::multiThreadedSim);
-	void QueKillUnit(bool delay = Threading::multiThreadedSim);
+	void QueKillUnit(bool deathseq, bool delay = Threading::multiThreadedSim);
 	void QueMove(bool delay = Threading::multiThreadedSim);
 	void QueUnreservePad(bool delay = Threading::multiThreadedSim);
 	void QueCheckNotify(bool delay = Threading::multiThreadedSim);

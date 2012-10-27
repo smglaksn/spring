@@ -256,7 +256,7 @@ bool CStrafeAirMoveType::Update()
 
 			if ((ground->GetHeightAboveWater(owner->pos.x, owner->pos.z) + 5.0f + owner->radius) > owner->pos.y) {
 				owner->SetCrashing(false);
-				owner->QueKillUnit();
+				owner->QueKillUnit(true);
 			}
 
 			owner->QueSmokeProjectile();
@@ -343,7 +343,7 @@ bool CStrafeAirMoveType::HandleCollisions() {
 			// if crashing and we hit a building, die right now
 			// rather than waiting until we are close enough to
 			// the ground
-			owner->QueKillUnit();
+			owner->QueKillUnit(true);
 			return true;
 		}
 

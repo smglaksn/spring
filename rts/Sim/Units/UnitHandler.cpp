@@ -383,7 +383,7 @@ inline void UpdateMoveType(CUnit *unit) {
 	if (!unit->pos.IsInBounds() && (unit->speed.SqLength() > (MAX_UNIT_SPEED * MAX_UNIT_SPEED))) {
 		// this unit is not coming back, kill it now without any death
 		// sequence (so deathScriptFinished becomes true immediately)
-		unit->QueKillUnit();
+		unit->QueKillUnit(false);
 	}
 
 	UNIT_SANITY_CHECK(unit);
