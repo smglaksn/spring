@@ -10,6 +10,7 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Units/Unit.h"
+#include "System/Log/ILog.h"
 
 CR_BIND_DERIVED(CProjectile, CExpGenSpawnable, );
 
