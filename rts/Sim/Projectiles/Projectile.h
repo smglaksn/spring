@@ -17,6 +17,7 @@
 class CUnit;
 class CFeature;
 class CVertexArray;
+struct LocalModelPiece;
 
 
 class CProjectile: public CExpGenSpawnable
@@ -61,6 +62,9 @@ public:
 	unsigned int GetProjectileType() const { return projectileType; }
 	unsigned int GetCollisionFlags() const { return collisionFlags; }
 
+	void QueCollision(CUnit* u, LocalModelPiece* lmp, const float3& cpos, bool delay = Threading::multiThreadedSim);
+	void QueCollision(CFeature* f, const float3& cpos, bool delay = Threading::multiThreadedSim);
+	void QueCollision(const float cpos, bool delay = Threading::multiThreadedSim);
 
 	static bool inArray;
 	static CVertexArray* va;
@@ -84,6 +88,25 @@ public:
 
 	float mygravity;
 	float tempdist; ///< temp distance used for sorting when rendering
+
+	enum DelayOpType { UNIT_COLLISION, FEAT_COLLISION, GROUND_COLLISION };
+
+	struct DelayOp {
+		DelayOp(DelayOpType t) : type(t), unit(NULL), lmp(NULL), pos(ZeroVector) {}
+		DelayOp(DelayOpType t, CUnit* u, LocalModelPiece* l, const float3& p) : type(t), unit(u), lmp(l), pos(p) {}
+		DelayOp(DelayOpType t, CFeature* f, const float3& p) : type(t), feat(f), lmp(NULL), pos(p) {}
+		DelayOp(DelayOpType t, const float c) : type(t), feat(NULL), lmp(NULL), pos(float3(0.0f, c, 0.0f)) {}
+		DelayOpType type;
+
+		union {
+			CUnit* unit;
+			CFeature* feat;
+		};
+		LocalModelPiece* lmp;
+		float3 pos;
+	};
+	void ExecuteDelayOps();
+	std::deque<DelayOp> delayOps;
 
 protected:
 	int ownerId;

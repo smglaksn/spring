@@ -380,14 +380,13 @@ void CProjectileHandler::AddProjectile(CProjectile* p)
 
 void CProjectileHandler::CheckUnitCollisions(
 	CProjectile* p,
-	std::vector<CUnit*>& tempUnits,
-	CUnit** endUnit,
+	std::vector<CUnit*>& units,
 	const float3& ppos0,
 	const float3& ppos1)
 {
 	CollisionQuery cq;
 
-	for (CUnit** ui = &tempUnits[0]; ui != endUnit; ++ui) {
+	for (std::vector<CUnit*>::iterator ui = units.begin(); ui != units.end(); ++ui) {
 		CUnit* unit = *ui;
 
 		const CUnit* attacker = p->owner();
@@ -408,12 +407,7 @@ void CProjectileHandler::CheckUnitCollisions(
 		}
 
 		if (CCollisionHandler::DetectHit(unit, ppos0, ppos1, &cq)) {
-			if (cq.lmp != NULL) {
-				unit->SetLastAttackedPiece(cq.lmp, gs->frameNum);
-			}
-
-			p->pos = (cq.b0) ? cq.p0 : cq.p1;
-			p->Collision(unit);
+			p->QueCollision(unit, cq.lmp, (cq.b0) ? cq.p0 : cq.p1);
 			break;
 		}
 	}
@@ -421,8 +415,7 @@ void CProjectileHandler::CheckUnitCollisions(
 
 void CProjectileHandler::CheckFeatureCollisions(
 	CProjectile* p,
-	std::vector<CFeature*>& tempFeatures,
-	CFeature** endFeature,
+	std::vector<CFeature*>& features,
 	const float3& ppos0,
 	const float3& ppos1)
 {
@@ -434,7 +427,7 @@ void CProjectileHandler::CheckFeatureCollisions(
 
 	CollisionQuery cq;
 
-	for (CFeature** fi = &tempFeatures[0]; fi != endFeature; ++fi) {
+	for (std::vector<CFeature*>::iterator fi = features.begin(); fi != features.end(); ++fi) {
 		CFeature* feature = *fi;
 
 		if (!feature->blocking) {
@@ -442,44 +435,38 @@ void CProjectileHandler::CheckFeatureCollisions(
 		}
 
 		if (CCollisionHandler::DetectHit(feature, ppos0, ppos1, &cq)) {
-			p->pos = (cq.b0) ? cq.p0 : cq.p1;
-			p->Collision(feature);
+			p->QueCollision(feature, (cq.b0) ? cq.p0 : cq.p1);
 			break;
 		}
 	}
 }
 
-void CProjectileHandler::CheckUnitFeatureCollisions(ProjectileContainer& pc) {
-	static std::vector<CUnit*> tempUnits(uh->MaxUnits(), NULL);
-	static std::vector<CFeature*> tempFeatures(uh->MaxUnits(), NULL);
+void CProjectileHandler::ProjectileCollisionThreadFunc() {
+	ProjectileContainer& pc = *curpc;
+	const int countEnd = pc.size();
+	ProjectileContainer::iterator pi = pc.begin();
+	int curPos = 0;
+	while(true) {
+		int nextPos = ++uh->atomicCount;
+		if (nextPos >= countEnd) break;
+		while(curPos < nextPos) { ++pi; ++curPos; }
+		CProjectile *p = *pi;
 
-	for (ProjectileContainer::iterator pci = pc.begin(); pci != pc.end(); ++pci) {
-		CProjectile* p = *pci;
-
-		if (p->checkCol && !p->deleteMe) {
+		if (!p->checkCol) {
+			continue;
+		}
+		if (!p->deleteMe) {
 			const float3 ppos0 = p->pos;
 			const float3 ppos1 = p->pos + p->speed;
 			const float speedf = p->speed.Length();
 
-			CUnit** endUnit = &tempUnits[0];
-			CFeature** endFeature = &tempFeatures[0];
+			std::vector<CUnit *> units;
+			std::vector<CFeature *> features;
 
-			qf->GetUnitsAndFeaturesExact(p->pos, p->radius + speedf, endUnit, endFeature);
+			qf->StableGetUnitsAndFeaturesExact(p->pos, p->radius + speedf, units, features);
 
-			CheckUnitCollisions(p, tempUnits, endUnit, ppos0, ppos1);
-			CheckFeatureCollisions(p, tempFeatures, endFeature, ppos0, ppos1);
-		}
-	}
-}
-
-void CProjectileHandler::CheckGroundCollisions(ProjectileContainer& pc) {
-	ProjectileContainer::iterator pci;
-
-	for (pci = pc.begin(); pci != pc.end(); ++pci) {
-		CProjectile* p = *pci;
-
-		if (!p->checkCol) {
-			continue;
+			CheckUnitCollisions(p, units, ppos0, ppos1);
+			CheckFeatureCollisions(p, features, ppos0, ppos1);
 		}
 
 		// NOTE: if <p> is a MissileProjectile and does not
@@ -500,9 +487,21 @@ void CProjectileHandler::CheckGroundCollisions(ProjectileContainer& pc) {
 			// where we cannot live, adjust it and explode us now
 			// (if the projectile does not set deleteMe = true, it
 			// will keep hugging the terrain)
-			p->pos.y = belowGround? groundHeight: 0.0f;
-			p->Collision();
+			p->QueCollision(belowGround? groundHeight: 0.0f);
 		}
+	}
+}
+
+void CProjectileHandler::CheckUnitFeatureGroundCollisions(ProjectileContainer& pc) {
+	Threading::SetMultiThreadedSim(modInfo.multiThreadSim);
+	Threading::SetThreadedPath(modInfo.asyncPathFinder);
+	// Use the current thread as thread zero. FIRE!
+	curpc = &pc;
+	uh->simThreadingStage = CUnitHandler::PROJECTILE_COLLISION;
+	uh->MoveTypeThreadFunc(0);
+	Threading::SetMultiThreadedSim(false);
+	for (ProjectileContainer::iterator pi = pc.begin(); pi != pc.end(); ++pi) {
+		(*pi)->ExecuteDelayOps();
 	}
 }
 
@@ -510,11 +509,8 @@ void CProjectileHandler::CheckCollisions()
 {
 	SCOPED_TIMER("ProjectileHandler::CheckCollisions");
 
-	CheckUnitFeatureCollisions(syncedProjectiles); //! changes simulation state
-	CheckUnitFeatureCollisions(unsyncedProjectiles); //! does not change simulation state
-
-	CheckGroundCollisions(syncedProjectiles); //! changes simulation state
-	CheckGroundCollisions(unsyncedProjectiles); //! does not change simulation state
+	CheckUnitFeatureGroundCollisions(syncedProjectiles); //! changes simulation state
+	CheckUnitFeatureGroundCollisions(unsyncedProjectiles); //! does not change simulation state
 }
 
 

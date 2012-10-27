@@ -82,6 +82,10 @@ public:
 	float maxUnitRadius;                              ///< largest radius of any unit added so far
 	bool morphUnitToFeature;
 
+	enum SimThreadingStage { PROJECTILE_COLLISION, UPDATE_MOVETYPE, SLOW_UPDATE_MOVETYPE, DELAYED_SLOW_UPDATE_MOVETYPE};
+	volatile SimThreadingStage simThreadingStage;
+	gmlCount atomicCount;
+
 private:
 	///< test a single mapsquare for build possibility
 	BuildSquareStatus TestBuildSquare(const float3& pos, const UnitDef *unitdef,CFeature *&feature, int allyteam, bool synced);
@@ -97,10 +101,7 @@ private:
 	int simNumExtraThreads;
 	boost::barrier* simBarrier;
 	boost::thread* simThreads[GML_MAX_NUM_THREADS];
-	gmlCount atomicCount;
 	volatile bool stopThread;
-	enum MoveTypeStage { UPDATE_MOVETYPE, SLOW_UPDATE_MOVETYPE, DELAYED_SLOW_UPDATE_MOVETYPE};
-	volatile MoveTypeStage moveTypeStage;
 	unsigned short blockOps[MAX_UNITS];
 };
 

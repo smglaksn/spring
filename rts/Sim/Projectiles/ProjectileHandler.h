@@ -69,10 +69,10 @@ public:
 		return &(it->second);
 	}
 
-	void CheckUnitCollisions(CProjectile*, std::vector<CUnit*>&, CUnit**, const float3&, const float3&);
-	void CheckFeatureCollisions(CProjectile*, std::vector<CFeature*>&, CFeature**, const float3&, const float3&);
-	void CheckUnitFeatureCollisions(ProjectileContainer&);
-	void CheckGroundCollisions(ProjectileContainer&);
+	void CheckUnitCollisions(CProjectile*, std::vector<CUnit*>&, const float3&, const float3&);
+	void ProjectileCollisionThreadFunc();
+	void CheckFeatureCollisions(CProjectile*, std::vector<CFeature*>&, const float3&, const float3&);
+	void CheckUnitFeatureGroundCollisions(ProjectileContainer&);
 	void CheckCollisions();
 
 	void SetMaxParticles(int value) { maxParticles = value; }
@@ -113,6 +113,7 @@ private:
 	std::list<int> freeUnsyncedIDs;           // available unsynced projectile ID's
 	ProjectileMap syncedProjectileIDs;        // ID ==> <projectile, allyteam> map for living synced projectiles
 	ProjectileMap unsyncedProjectileIDs;      // ID ==> <projectile, allyteam> map for living unsynced projectiles
+	ProjectileContainer* curpc;
 };
 
 

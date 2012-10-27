@@ -7,6 +7,7 @@
 #include "Rendering/Colors.h"
 #include "Rendering/GL/VertexArray.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
+#include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Units/Unit.h"
 
@@ -169,4 +170,56 @@ int CProjectile::DrawArray()
 	inArray = false;
 
 	return idx;
+}
+
+void CProjectile::QueCollision(CUnit* u, LocalModelPiece* lmp, const float3& cpos, bool delay) {
+	if (delay) {
+//		ASSERT_THREAD_OWNS_PROJECTILE();
+		delayOps.push_back(DelayOp(UNIT_COLLISION, u, lmp, cpos));
+	} else {
+		if (lmp != NULL)
+			u->SetLastAttackedPiece(lmp, gs->frameNum);
+		pos = cpos;
+		Collision(u);
+	}
+}
+
+void CProjectile::QueCollision(CFeature* f, const float3& cpos, bool delay) {
+	if (delay) {
+//		ASSERT_THREAD_OWNS_PROJECTILE();
+		delayOps.push_back(DelayOp(FEAT_COLLISION, f, cpos));
+	} else {
+		pos = cpos;
+		Collision(f);
+	}
+}
+
+void CProjectile::QueCollision(const float cpos, bool delay) {
+	if (delay) {
+//		ASSERT_THREAD_OWNS_PROJECTILE();
+		delayOps.push_back(DelayOp(GROUND_COLLISION, cpos));
+	} else {
+		pos.y = cpos;
+		Collision();
+	}
+}
+
+void CProjectile::ExecuteDelayOps() {
+	while (!delayOps.empty()) {
+		const DelayOp d = delayOps.front(); // NOTE: No reference here since any of the calls below may add new delay ops at the end of the deque
+		switch (d.type) {
+			case UNIT_COLLISION:
+				QueCollision(d.unit, d.lmp, d.pos, false);
+				break;
+			case FEAT_COLLISION:
+				QueCollision(d.feat, d.pos, false);
+				break;
+			case GROUND_COLLISION:
+				QueCollision(d.pos.y, false);
+				break;
+			default:
+				LOG_L(L_ERROR, "Unknown delay operation: %d", d.type);
+		}
+		delayOps.pop_front();
+	}
 }

@@ -70,7 +70,7 @@ CUnitHandler::CUnitHandler()
 	morphUnitToFeature(true),
 	maxUnits(0),
 	stopThread(false),
-	moveTypeStage(UPDATE_MOVETYPE),
+	simThreadingStage(UPDATE_MOVETYPE),
 	atomicCount(-1),
 	simBarrier(NULL)
 {
@@ -282,7 +282,7 @@ void CUnitHandler::Update()
 		Threading::SetMultiThreadedSim(modInfo.multiThreadSim);
 		Threading::SetThreadedPath(modInfo.asyncPathFinder);
 		// Use the current thread as thread zero. FIRE!
-		moveTypeStage = UPDATE_MOVETYPE;
+		simThreadingStage = UPDATE_MOVETYPE;
 		MoveTypeThreadFunc(0);
 		Threading::SetMultiThreadedSim(false);
 
@@ -342,12 +342,12 @@ void CUnitHandler::Update()
 
 		Threading::SetMultiThreadedSim(modInfo.multiThreadSim);
 		// Use the current thread as thread zero. FIRE!
-		moveTypeStage = SLOW_UPDATE_MOVETYPE;
+		simThreadingStage = SLOW_UPDATE_MOVETYPE;
 		MoveTypeThreadFunc(0);
 
 		Threading::SetMultiThreadedSim(false);
 		// Use the current thread as thread zero. FIRE!
-		moveTypeStage = DELAYED_SLOW_UPDATE_MOVETYPE;
+		simThreadingStage = DELAYED_SLOW_UPDATE_MOVETYPE;
 		MoveTypeThreadFunc(0);
 	}
 
@@ -403,7 +403,7 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 		do {
 			if (i == 0) {
 				atomicCount %= -1;
-				if (moveTypeStage == SLOW_UPDATE_MOVETYPE) {
+				if (simThreadingStage == SLOW_UPDATE_MOVETYPE) {
 					memset(CUnit::updateOps, 0, sizeof(CUnit::updateOps));
 				}
 			}
@@ -411,7 +411,10 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 			if (stopThread)
 				break;
 			int curPos = 0;
-			if (moveTypeStage == UPDATE_MOVETYPE) {
+			if (simThreadingStage == PROJECTILE_COLLISION) {
+				ph->ProjectileCollisionThreadFunc();
+			}
+			else if (simThreadingStage == UPDATE_MOVETYPE) {
 				const int countEnd = activeUnits.size();
 				std::list<CUnit*>::iterator usi = activeUnits.begin();
 				while(true) {
@@ -422,7 +425,7 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 					Threading::SetThreadCurrentUnitID(unit->id);
 					UpdateMoveType(unit);
 				}
-			} else if (moveTypeStage == SLOW_UPDATE_MOVETYPE) {
+			} else if (simThreadingStage == SLOW_UPDATE_MOVETYPE) {
 				const int countEnd = (activeUnits.size() / UNIT_SLOWUPDATE_RATE) + 1;
 				std::list<CUnit*>::iterator sui = ((gs->frameNum & (UNIT_SLOWUPDATE_RATE - 1)) == 0) ? activeUnits.begin() : slowUpdateIterator;
 
@@ -436,7 +439,7 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 					Threading::SetThreadCurrentUnitID(unit->id);
 					unit->moveType->SlowUpdate();
 				}
-			} else if (moveTypeStage == DELAYED_SLOW_UPDATE_MOVETYPE) {
+			} else if (simThreadingStage == DELAYED_SLOW_UPDATE_MOVETYPE) {
 				const int countEnd = 4;
 				while(true) {
 					int nextPos = ++atomicCount;
@@ -480,13 +483,15 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 		} while (i > 0);
 	}
 	else {
-		if (moveTypeStage == UPDATE_MOVETYPE) {
+		if (simThreadingStage == PROJECTILE_COLLISION) {
+			ph->ProjectileCollisionThreadFunc();
+		} else if (simThreadingStage == UPDATE_MOVETYPE) {
 			for (std::list<CUnit*>::iterator usi = activeUnits.begin(); usi != activeUnits.end(); ++usi) {
 				CUnit *unit = *usi;
 				Threading::SetThreadCurrentUnitID(unit->id);
 				UpdateMoveType(unit);
 			}
-		} else if (moveTypeStage == SLOW_UPDATE_MOVETYPE) {
+		} else if (simThreadingStage == SLOW_UPDATE_MOVETYPE) {
 			std::list<CUnit*>::iterator sui = ((gs->frameNum & (UNIT_SLOWUPDATE_RATE - 1)) == 0) ? activeUnits.begin() : slowUpdateIterator;
 			int n = (activeUnits.size() / UNIT_SLOWUPDATE_RATE) + 1;
 
@@ -495,7 +500,7 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 				Threading::SetThreadCurrentUnitID(unit->id);
 				unit->moveType->SlowUpdate();
 			}
-		} else if (moveTypeStage == DELAYED_SLOW_UPDATE_MOVETYPE) {
+		} else if (simThreadingStage == DELAYED_SLOW_UPDATE_MOVETYPE) {
 			// not needed for singlethreaded sim
 		}
 	}

@@ -272,6 +272,33 @@ std::vector<CFeature*> CQuadField::StableGetFeaturesExact(const float3& pos, flo
 	return features;
 }
 
+// optimization specifically for projectile collisions
+void CQuadField::StableGetUnitsAndFeaturesExact(const float3& pos, float radius, std::vector<CUnit*>& units, std::vector<CFeature*>& features)
+{
+	const std::vector<int>& quads = GetQuads(pos, radius);
+
+	for (std::vector<int>::const_iterator q = quads.begin(); q != quads.end(); ++q) {
+		Quad& quad = baseQuads[*q];
+
+		for (std::list<CUnit*>::iterator ui = quad.units.begin(); ui != quad.units.end(); ++ui) {
+			CUnit* u = *ui;
+			if (AlreadyProcessed(u, quads, *q))
+				continue;
+			units.push_back(u);
+		}
+
+		for (std::list<CFeature*>::iterator fi = quad.features.begin(); fi != quad.features.end(); ++fi) {
+			CFeature *f = *fi;
+			const float totRad = radius + f->StableRadius();
+			if (AlreadyProcessed(f, quads, *q))
+				continue;
+			if ((pos - f->StableMidPos()).SqLength() >= (totRad * totRad))
+				continue;
+			features.push_back(f);
+		}
+	}
+}
+
 std::vector<CSolidObject*> CQuadField::StableGetSolidsExact(const float3& pos, float radius)
 {
 	std::vector<CSolidObject*> solids;
