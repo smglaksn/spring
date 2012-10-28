@@ -71,6 +71,8 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_GMT)
 	(((CMoveMath::IsBlocked(*md, pos, u) & CMoveMath::BLOCK_STRUCTURE) != 0) ||  \
 	 ((CMoveMath::GetPosSpeedMod(*md, pos) <= 0.01f)))
 
+// this one must be outside MT code
+static const float MAX_AVOIDEE_COSINE = math::cosf(105.0f * (PI / 180.0f));
 
 CR_BIND_DERIVED(CGroundMoveType, AMoveType, (NULL));
 
@@ -1031,7 +1033,6 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 
 	static const float AVOIDER_DIR_WEIGHT = 1.0f;
 	static const float DESIRED_DIR_WEIGHT = 0.5f;
-	static const float MAX_AVOIDEE_COSINE = math::cosf(105.0f * (PI / 180.0f));
 	static const float LAST_DIR_MIX_ALPHA = 0.7f;
 
 	// now we do the obstacle avoidance proper

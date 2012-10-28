@@ -434,7 +434,7 @@ void CHoverAirMoveType::UpdateFlying()
 						}
 						relPos.y = 0.0f;
 						relPos.Normalize();
-						static CMatrix44f rot(0.0f,fastmath::PI/4.0f,0.0f);
+						CMatrix44f rot(0.0f,fastmath::PI/4.0f,0.0f);
 						float3 newPos = rot.Mul(relPos);
 
 						// Make sure the point is on the circle
