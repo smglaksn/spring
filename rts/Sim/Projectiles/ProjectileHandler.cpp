@@ -441,79 +441,89 @@ void CProjectileHandler::CheckFeatureCollisions(
 	}
 }
 
-void CProjectileHandler::ProjectileCollisionThreadFunc() {
-	ProjectileContainer& pc = *curpc;
-	const int countEnd = pc.size();
-	ProjectileContainer::iterator pi = pc.begin();
-	int curPos = 0;
-	while(true) {
-		int nextPos = ++uh->atomicCount;
-		if (nextPos >= countEnd) break;
+inline void CProjectileHandler::CheckProjectileCollision(CProjectile *p) {
+	if (!p->checkCol)
+		return;
+	if (!p->deleteMe) {
+		const float3 ppos0 = p->pos;
+		const float3 ppos1 = p->pos + p->speed;
+		const float speedf = p->speed.Length();
+
+		std::vector<CUnit *> units;
+		std::vector<CFeature *> features;
+
+		qf->StableGetUnitsAndFeaturesExact(p->pos, p->radius + speedf, units, features);
+
+		CheckUnitCollisions(p, units, ppos0, ppos1);
+		CheckFeatureCollisions(p, features, ppos0, ppos1);
+	}
+
+	// NOTE: if <p> is a MissileProjectile and does not
+	// have selfExplode set, it will never be removed (!)
+	if (p->GetCollisionFlags() & Collision::NOGROUND)
+		return;
+
+	// NOTE: don't add p->radius to groundHeight, or most
+	// projectiles will collide with the ground too early
+	const float groundHeight = ground->GetHeightReal(p->pos.x, p->pos.z);
+	const bool belowGround = (p->pos.y < groundHeight);
+	const bool insideWater = (p->pos.y <= 0.0f && !belowGround);
+	const bool ignoreWater = p->ignoreWater;
+
+	if (belowGround || (insideWater && !ignoreWater)) {
+		// if position has dropped below terrain or into water
+		// where we cannot live, adjust it and explode us now
+		// (if the projectile does not set deleteMe = true, it
+		// will keep hugging the terrain)
+		p->QueCollision(belowGround? groundHeight: 0.0f);
+	}
+}
+
+void CProjectileHandler::CheckCollisionsThreaded(ProjectileContainer &pc, int curPos, int& nextPos) {
+	int countEnd = curPos + pc.size();
+	for(ProjectileContainer::iterator pi = pc.begin(); nextPos < countEnd; nextPos = ++uh->atomicCount) {
 		while(curPos < nextPos) { ++pi; ++curPos; }
-		CProjectile *p = *pi;
-
-		if (!p->checkCol) {
-			continue;
-		}
-		if (!p->deleteMe) {
-			const float3 ppos0 = p->pos;
-			const float3 ppos1 = p->pos + p->speed;
-			const float speedf = p->speed.Length();
-
-			std::vector<CUnit *> units;
-			std::vector<CFeature *> features;
-
-			qf->StableGetUnitsAndFeaturesExact(p->pos, p->radius + speedf, units, features);
-
-			CheckUnitCollisions(p, units, ppos0, ppos1);
-			CheckFeatureCollisions(p, features, ppos0, ppos1);
-		}
-
-		// NOTE: if <p> is a MissileProjectile and does not
-		// have selfExplode set, it will never be removed (!)
-		if (p->GetCollisionFlags() & Collision::NOGROUND) {
-			continue;
-		}
-
-		// NOTE: don't add p->radius to groundHeight, or most
-		// projectiles will collide with the ground too early
-		const float groundHeight = ground->GetHeightReal(p->pos.x, p->pos.z);
-		const bool belowGround = (p->pos.y < groundHeight);
-		const bool insideWater = (p->pos.y <= 0.0f && !belowGround);
-		const bool ignoreWater = p->ignoreWater;
-
-		if (belowGround || (insideWater && !ignoreWater)) {
-			// if position has dropped below terrain or into water
-			// where we cannot live, adjust it and explode us now
-			// (if the projectile does not set deleteMe = true, it
-			// will keep hugging the terrain)
-			p->QueCollision(belowGround? groundHeight: 0.0f);
-		}
+		CheckProjectileCollision(*pi);
 	}
 }
 
-void CProjectileHandler::CheckUnitFeatureGroundCollisions(ProjectileContainer& pc) {
-	Threading::SetMultiThreadedSim(modInfo.multiThreadSim);
-	Threading::SetThreadedPath(modInfo.asyncPathFinder);
-	// Use the current thread as thread zero. FIRE!
-	curpc = &pc;
-	uh->simThreadingStage = CUnitHandler::PROJECTILE_COLLISION;
-	uh->MoveTypeThreadFunc(0);
-	Threading::SetMultiThreadedSim(false);
-	for (ProjectileContainer::iterator pi = pc.begin(); pi != pc.end(); ++pi) {
-		(*pi)->ExecuteDelayOps();
+void CProjectileHandler::ProjectileCollisionThreadFunc() {
+	int nextPos = ++uh->atomicCount;
+	CheckCollisionsThreaded(syncedProjectiles, 0, nextPos);
+	CheckCollisionsThreaded(unsyncedProjectiles, syncedProjectiles.size(), nextPos);
+}
+
+void CProjectileHandler::ProjectileCollisionNonThreadFunc() {
+	for (ProjectileContainer::iterator pi = syncedProjectiles.begin(); pi != syncedProjectiles.end(); ++pi) {
+		CheckProjectileCollision(*pi);
+	}
+	for (ProjectileContainer::iterator pi = unsyncedProjectiles.begin(); pi != unsyncedProjectiles.end(); ++pi) {
+		CheckProjectileCollision(*pi);
 	}
 }
 
-void CProjectileHandler::CheckCollisions()
-{
+void CProjectileHandler::CheckCollisions() {
 	SCOPED_TIMER("ProjectileHandler::CheckCollisions");
 
-	CheckUnitFeatureGroundCollisions(syncedProjectiles); //! changes simulation state
-	CheckUnitFeatureGroundCollisions(unsyncedProjectiles); //! does not change simulation state
+	Threading::SetMultiThreadedSim(modInfo.multiThreadSim);
+	uh->simThreadingStage = CUnitHandler::PROJECTILE_COLLISION;
+	// Use the current thread as thread zero. FIRE!
+	uh->MoveTypeThreadFunc(0);
+	Threading::SetMultiThreadedSim(false);
+
+	if (modInfo.multiThreadSim) {
+		for (ProjectileContainer::iterator pi = syncedProjectiles.begin(); pi != syncedProjectiles.end(); ++pi) {
+			if (!(*pi)->delayOps.empty()) {
+				(*pi)->ExecuteDelayOps();
+			}
+		}
+		for (ProjectileContainer::iterator pi = unsyncedProjectiles.begin(); pi != unsyncedProjectiles.end(); ++pi) {
+			if (!(*pi)->delayOps.empty()) {
+				(*pi)->ExecuteDelayOps();
+			}
+		}
+	}
 }
-
-
 
 void CProjectileHandler::AddGroundFlash(CGroundFlash* flash)
 {

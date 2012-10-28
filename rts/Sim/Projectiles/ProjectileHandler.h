@@ -71,9 +71,11 @@ public:
 
 	void CheckUnitCollisions(CProjectile*, std::vector<CUnit*>&, const float3&, const float3&);
 	void ProjectileCollisionThreadFunc();
+	void ProjectileCollisionNonThreadFunc();
 	void CheckFeatureCollisions(CProjectile*, std::vector<CFeature*>&, const float3&, const float3&);
-	void CheckUnitFeatureGroundCollisions(ProjectileContainer&);
 	void CheckCollisions();
+	void CheckCollisionsThreaded(ProjectileContainer &pc, int curPos, int& nextPos);
+	void CheckProjectileCollision(CProjectile *p);
 
 	void SetMaxParticles(int value) { maxParticles = value; }
 	void SetMaxNanoParticles(int value) { maxNanoParticles = value; }
@@ -113,7 +115,6 @@ private:
 	std::list<int> freeUnsyncedIDs;           // available unsynced projectile ID's
 	ProjectileMap syncedProjectileIDs;        // ID ==> <projectile, allyteam> map for living synced projectiles
 	ProjectileMap unsyncedProjectileIDs;      // ID ==> <projectile, allyteam> map for living unsynced projectiles
-	ProjectileContainer* curpc;
 };
 
 

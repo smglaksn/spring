@@ -484,7 +484,7 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 	}
 	else {
 		if (simThreadingStage == PROJECTILE_COLLISION) {
-			ph->ProjectileCollisionThreadFunc();
+			ph->ProjectileCollisionNonThreadFunc();
 		} else if (simThreadingStage == UPDATE_MOVETYPE) {
 			for (std::list<CUnit*>::iterator usi = activeUnits.begin(); usi != activeUnits.end(); ++usi) {
 				CUnit *unit = *usi;
