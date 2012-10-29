@@ -387,6 +387,15 @@ CFeature* CFeatureHandler::CreateWreckage(const float3& pos, const string& name,
 }
 
 
+void CFeatureHandler::ExecuteBlockOps() {
+	if (modInfo.asyncPathFinder) {
+		for (CFeatureSet::iterator i = blockFeatures.begin(); i != blockFeatures.end(); ++i) {
+			(*i)->ExecuteDelayOps();
+		}
+		blockFeatures.clear();
+	}
+}
+
 
 void CFeatureHandler::Update()
 {
@@ -406,23 +415,16 @@ void CFeatureHandler::Update()
 			freeIDs.splice(freeIDs.end(), toBeFreedIDs, toBeFreedIDs.begin(), toBeFreedIDs.end());
 	}
 
+	if (toBeRemoved.empty() && !blockFeatures.empty()) {
+		IPathManager::ScopedDisableThreading sdt;
+		ExecuteBlockOps();
+	}
 	{
 		GML_STDMUTEX_LOCK(rfeat); // Update
 
-		do {
-			if (toBeRemoved.empty() && updateFeatures.empty())
-				break;
-
+		if (!toBeRemoved.empty()) {
 			IPathManager::ScopedDisableThreading sdt;
-
-			if (modInfo.asyncPathFinder) {
-				for (CFeatureSet::iterator i = updateFeatures.begin(); i != updateFeatures.end(); ++i) {
-					(*i)->ExecuteDelayOps();
-				}
-			}
-
-			if (toBeRemoved.empty())
-				break;
+			ExecuteBlockOps();
 
 			GML_RECMUTEX_LOCK(obj); // Update
 
@@ -452,7 +454,7 @@ void CFeatureHandler::Update()
 					CSolidObject::SetDeletingRefID(-1);
 				}
 			}
-		} while (false);
+		}
 
 		eventHandler.UpdateFeatures();
 	}
@@ -470,6 +472,10 @@ void CFeatureHandler::Update()
 	}
 }
 
+void CFeatureHandler::SetFeatureBlockChanged(CFeature* feature)
+{
+	blockFeatures.insert(feature);
+}
 
 void CFeatureHandler::SetFeatureUpdateable(CFeature* feature)
 {

@@ -40,6 +40,8 @@ public:
 	const FeatureDef* GetFeatureDefByID(int id);
 
 	void SetFeatureUpdateable(CFeature* feature);
+	void SetFeatureBlockChanged(CFeature* feature);
+	void ExecuteBlockOps();
 	void TerrainChanged(int x1, int y1, int x2, int y2);
 
 	const std::map<std::string, const FeatureDef*>& GetFeatureDefs() const { return featureDefs; }
@@ -63,6 +65,7 @@ private:
 
 	std::list<int> toBeRemoved;
 	CFeatureSet updateFeatures;
+	CFeatureSet blockFeatures;
 };
 
 extern CFeatureHandler* featureHandler;

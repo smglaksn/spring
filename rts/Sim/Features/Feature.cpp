@@ -654,7 +654,7 @@ float CFeature::RemainingEnergy() const
 void CFeature::QueBlock(bool delay) {
 	if (delay) {
 		delayOps.push_back(DelayOp(BLOCK));
-		featureHandler->SetFeatureUpdateable(this);
+		featureHandler->SetFeatureBlockChanged(this);
 	} else {
 		Block();
 	}
@@ -662,7 +662,7 @@ void CFeature::QueBlock(bool delay) {
 void CFeature::QueUnBlock(bool delay) {
 	if (delay) {
 		delayOps.push_back(DelayOp(UNBLOCK));
-		featureHandler->SetFeatureUpdateable(this);
+		featureHandler->SetFeatureBlockChanged(this);
 	} else {
 		UnBlock();
 	}

@@ -222,7 +222,7 @@ bool CGroundBlockingObjectMap::GroundBlocked(const float3& pos, CSolidObject* ig
   * When a factory opens up, for example.
   */
 void CGroundBlockingObjectMap::OpenBlockingYard(CSolidObject* object) {
-	IPathManager::ScopedDisableThreading std;
+	IPathManager::ScopedDisableThreading sdt;
 	RemoveGroundBlockingObject(object);
 	AddGroundBlockingObject(object, YARDMAP_YARDFREE);
 }
@@ -232,7 +232,7 @@ void CGroundBlockingObjectMap::OpenBlockingYard(CSolidObject* object) {
   * When a factory closes, for example.
   */
 void CGroundBlockingObjectMap::CloseBlockingYard(CSolidObject* object) {
-	IPathManager::ScopedDisableThreading std;
+	IPathManager::ScopedDisableThreading sdt;
 	RemoveGroundBlockingObject(object);
 	AddGroundBlockingObject(object, YARDMAP_YARDBLOCKED);
 }

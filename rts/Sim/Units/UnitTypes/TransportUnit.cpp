@@ -410,7 +410,7 @@ bool CTransportUnit::DetachUnit(CUnit* unit)
 {
 	if (DetachUnitCore(unit)) {
 		{ // Don't unload units on top of each other
-			IPathManager::ScopedDisableThreading std;
+			IPathManager::ScopedDisableThreading sdt;
 			unit->QueBlock();
 		}
 
