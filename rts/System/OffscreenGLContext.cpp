@@ -37,6 +37,7 @@ COffscreenGLContext::COffscreenGLContext()
 	}
 
 	int status = TRUE;
+	offscreenRC = NULL;
 #ifdef WGL_ARB_create_context
 	if (wglCreateContextAttribsARB) {
 		static const int contextAttribs[] = {
@@ -47,11 +48,11 @@ COffscreenGLContext::COffscreenGLContext()
 
 		offscreenRC = wglCreateContextAttribsARB(hdc, mainRC, contextAttribs);
 		if (!offscreenRC) {
-			throw opengl_error("Couldn't create an offscreen GL context: wglCreateContextAttribsARB failed!");
+			LOG_L(L_WARNING, "Couldn't create an offscreen GL context: wglCreateContextAttribsARB failed!");
 		}
-	} else
+	}
 #endif
-	{
+	if (!offscreenRC) {
 		//! create a 2nd GL context
 		offscreenRC = wglCreateContext(hdc);
 		if (!offscreenRC) {
