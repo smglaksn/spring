@@ -1,4 +1,6 @@
 
+Add_Subdirectory(FileSystem)
+
 # This list was created using this *nix shell command:
 # > find . -name "*.cpp" -or -name "*.c" | sort
 # Then Sound/ stuff was removed, because it is now a separate static lib.
@@ -75,24 +77,7 @@ SET(sources_engine_System_creg
 		"${CMAKE_CURRENT_SOURCE_DIR}/creg/creg.cpp"
 	)
 SET(sources_engine_System_FileSystem
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/IArchive.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/ArchiveLoader.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/ArchiveScanner.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/BufferedArchive.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/CacheDir.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/DataDirLocater.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/DataDirsAccess.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/DirArchive.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/FileFilter.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/FileHandler.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/FileSystem.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/FileSystemAbstraction.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/FileSystemInitializer.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/PoolArchive.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/SevenZipArchive.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/SimpleParser.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/VFSHandler.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/ZipArchive.cpp"
 	)
 SET(sources_engine_System_Log
 		"${CMAKE_CURRENT_SOURCE_DIR}/Log/Backend.cpp"
