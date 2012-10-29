@@ -7,6 +7,7 @@
 #include "System/Log/ILog.h"
 #include "System/Platform/CrashHandler.h"
 #include "System/Sync/FPUCheck.h"
+#include "System/Util.h"
 
 #include <boost/version.hpp>
 #include <boost/thread.hpp>
@@ -221,15 +222,15 @@ void ThreadNotUnitOwnerErrorFunc() { LOG_L(L_ERROR, "Illegal attempt to modify a
 		}
 		allmask &= GML::SimEnabled() ? ~(simmask | mainmask) : ~mainmask;
 
-		if (!stricmp(threadName, "Main"))
+		if (StringCaseCmp(threadName, "Main"))
 			return (1 << main);
-		else if (!stricmp(threadName, "Sim"))
+		else if (StringCaseCmp(threadName, "Sim"))
 			return (1 << sim);
-		else if (!strnicmp(threadName, "SimMT", 5))
+		else if (StringCaseCmp(threadName, "SimMT", 5))
 			return allmask;
-		else if (!strnicmp(threadName, "RenderMT", 8))
+		else if (StringCaseCmp(threadName, "RenderMT", 8))
 			return allmask;
-		else if (!stricmp(threadName, "Path"))
+		else if (StringCaseCmp(threadName, "Path"))
 			return allmask;
 		else
 			LOG_L(L_ERROR, "GetDefaultAffinity: Unknown thread name %s", threadName);
