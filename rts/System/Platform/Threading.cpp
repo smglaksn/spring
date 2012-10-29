@@ -23,7 +23,7 @@
 
 
 namespace Threading {
-	unsigned simThreadCount = GML::SimEnabled() ? 1 : 0;
+	unsigned simThreadCount = GML::NumMainSimThreads();
 
 	static Error* threadError = NULL;
 	static bool haveMainThreadID = false;
@@ -220,7 +220,11 @@ void ThreadNotUnitOwnerErrorFunc() { LOG_L(L_ERROR, "Illegal attempt to modify a
 				simmask |= (1 << (sim + i));
 			}
 		}
+#ifdef HEADLESS
+		allmask &= GML::SimEnabled() ? ~simmask : ~mainmask;
+#else
 		allmask &= GML::SimEnabled() ? ~(simmask | mainmask) : ~mainmask;
+#endif
 
 		if (StringCaseCmp(threadName, "Main"))
 			return (1 << main);

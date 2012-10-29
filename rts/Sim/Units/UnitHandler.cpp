@@ -81,19 +81,18 @@ CUnitHandler::CUnitHandler()
 		maxUnits += teamHandler->Team(n)->maxUnits;
 	}
 
-	const int mainSimThread = GML::SimEnabled() ? 1 : 0;
 	size_t numThreads = std::max(0, configHandler->GetInt("SimThreadCount"));
 	if (numThreads == 0) {
 		unsigned lcpu = Threading::GetAvailableCores();
 		unsigned pcpu = Threading::GetPhysicalCores();
 		// deduct all logical cores dedicated to the rendering/sim main threads
-		numThreads = std::max((unsigned)mainSimThread, lcpu - (mainSimThread + 1) * (lcpu / pcpu) + mainSimThread); // add the main sim thread
+		numThreads = std::max((unsigned)GML::NumMainSimThreads(), lcpu - GML::NumMainThreads() * (int)(lcpu / pcpu) + GML::NumMainSimThreads()); // add the main sim thread
 	}
-	simNumExtraThreads = (!modInfo.multiThreadSim) ? 0 : std::max((size_t)0, numThreads - mainSimThread);
-	Threading::SimThreadCount(simNumExtraThreads + mainSimThread + (modInfo.asyncPathFinder ? 1 : 0));
+	simNumExtraThreads = (!modInfo.multiThreadSim) ? 0 : std::max((size_t)0, numThreads - GML::NumMainSimThreads());
+	Threading::SimThreadCount(simNumExtraThreads + GML::NumMainSimThreads() + (modInfo.asyncPathFinder ? 1 : 0));
 
 	if (simNumExtraThreads > 0)
-		LOG("[Threading] Simulation multithreading is enabled with %d threads", simNumExtraThreads + mainSimThread);
+		LOG("[Threading] Simulation multithreading is enabled with %d threads", simNumExtraThreads + GML::NumMainSimThreads());
 	else
 		LOG("[Threading] Simulation multithreading is disabled");
 
