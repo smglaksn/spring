@@ -14,6 +14,7 @@ Else  (NOT Boost_FOUND)
 
 	SET(ENGINE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/rts")
 	INCLUDE_DIRECTORIES(${ENGINE_SOURCE_DIR})
+	INCLUDE_DIRECTORIES(${ENGINE_SOURCE_DIR}/lib)
 	If	(NOT (WIN32 OR Boost_USE_STATIC_LIBS))
 		#Win32 tests links static
 		add_definitions(-DBOOST_TEST_DYN_LINK)
@@ -49,7 +50,6 @@ Else  (NOT Boost_FOUND)
 			"${ENGINE_SOURCE_DIR}/System/Net/UDPConnection.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Net/Connection.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Net/Socket.cpp"
-			"${ENGINE_SOURCE_DIR}/System/CRC.cpp"
 			"${CMAKE_CURRENT_SOURCE_DIR}/engine/System/NullGlobalConfig.cpp"
 			"${CMAKE_CURRENT_SOURCE_DIR}/engine/System/Nullerrorhandler.cpp"
 			${test_Log_sources}
@@ -61,7 +61,7 @@ Else  (NOT Boost_FOUND)
 			${Boost_SYSTEM_LIBRARY}
 			${SDL_LIBRARY}
 			${WS2_32_LIBRARY}
-			7zip
+			crc
 		)
 
 	ADD_TEST(NAME testUDPListener COMMAND test_UDPListener)
