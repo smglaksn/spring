@@ -16,7 +16,7 @@
 #include "ProtocolDef.h"
 #include "Exception.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/CRC.h"
+#include "CRC/CRC.h"
 #include "System/GlobalConfig.h"
 #include "System/Log/ILog.h"
 #include "System/Util.h"

@@ -12,7 +12,7 @@
 #include "System/creg/STL_Deque.h"
 #include "System/creg/STL_Map.h"
 #include "System/Exceptions.h"
-#include "System/CRC.h"
+#include "CRC/CRC.h"
 #include "System/myMath.h"
 #include "System/Util.h"
 

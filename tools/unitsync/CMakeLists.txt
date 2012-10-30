@@ -12,7 +12,7 @@ FIND_PACKAGE_STATIC(DevIL REQUIRED)
 LIST(APPEND unitsync_libs ${DEVIL_IL_LIBRARY} ${JPEG_LIBRARY} ${PNG_LIBRARY})
 LIST(APPEND unitsync_libs ${SPRING_MINIZIP_LIBRARY})
 LIST(APPEND unitsync_libs ${Boost_REGEX_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-LIST(APPEND unitsync_libs 7zip lua engine-filesystem headlessStubs)
+LIST(APPEND unitsync_libs 7zip lua engine-filesystem headlessStubs crc)
 
 IF    (MINGW)
 	# We still need these header files,
@@ -50,7 +50,6 @@ set(main_files
 	"${ENGINE_SRC_ROOT}/System/Config/ConfigSource.cpp"
 	"${ENGINE_SRC_ROOT}/System/Config/ConfigVariable.cpp"
 	"${ENGINE_SRC_ROOT}/System/Config/ConfigLocater.cpp"
-	"${ENGINE_SRC_ROOT}/System/CRC.cpp"
 	"${ENGINE_SRC_ROOT}/System/Platform/Misc.cpp"
 	"${ENGINE_SRC_ROOT}/System/Platform/ScopedFileLock.cpp"
 	"${ENGINE_SRC_ROOT}/System/LogOutput.cpp"
