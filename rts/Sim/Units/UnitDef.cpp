@@ -17,7 +17,7 @@
 #include "Rendering/IconHandler.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/myMath.h"
 #include "System/Util.h"
 

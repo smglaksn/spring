@@ -24,7 +24,7 @@
 #include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Util.h"
 
 

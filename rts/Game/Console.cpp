@@ -4,7 +4,7 @@
 
 #include "Console.h" 
 
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "Action.h"
 
 #include <assert.h>

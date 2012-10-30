@@ -26,7 +26,7 @@
 #include "System/myMath.h"
 #include "System/Sync/SyncTracer.h"
 #include "System/Sound/SoundChannels.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 CR_BIND_DERIVED(CWeapon, CObject, (NULL));
 

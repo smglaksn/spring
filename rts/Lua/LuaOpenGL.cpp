@@ -65,7 +65,7 @@
 #include "Sim/Units/UnitDefImage.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitTypes/TransportUnit.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Matrix44f.h"
 #include "System/Config/ConfigHandler.h"
 

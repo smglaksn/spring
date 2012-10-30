@@ -3,7 +3,7 @@
 #include "System/SafeVector.h"
 
 #ifdef USE_SAFE_VECTOR
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Platform/CrashHandler.h"
 #include "System/maindefines.h"
 

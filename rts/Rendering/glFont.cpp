@@ -16,7 +16,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/VertexArray.h"
 #include "Rendering/Textures/Bitmap.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/myMath.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"

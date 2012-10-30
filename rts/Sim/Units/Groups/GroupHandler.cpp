@@ -13,7 +13,7 @@
 #include "Game/Camera/CameraController.h"
 #include "Game/CameraHandler.h"
 #include "Sim/Units/Unit.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/TimeProfiler.h"
 #include "System/Input/KeyInput.h"
 #include "System/FileSystem/FileSystem.h"

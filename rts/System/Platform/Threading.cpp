@@ -3,7 +3,7 @@
 #include "lib/gml/gml_base.h"
 #include "Threading.h"
 #include "System/myMath.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include <boost/version.hpp>
 #include <boost/thread.hpp>

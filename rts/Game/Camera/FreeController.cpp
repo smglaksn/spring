@@ -10,7 +10,7 @@
 #include "Map/Ground.h"
 #include "Rendering/GlobalRendering.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Input/KeyInput.h"
 
 using std::max;

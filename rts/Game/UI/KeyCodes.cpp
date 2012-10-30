@@ -6,7 +6,7 @@
 
 #include "KeyCodes.h"
 #include "SDL_keysym.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Util.h"
 
 

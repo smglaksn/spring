@@ -63,7 +63,7 @@
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "System/myMath.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "LuaHelper.h"
 
 using std::max;

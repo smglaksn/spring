@@ -10,7 +10,7 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/myMath.h"
 #include "System/TimeProfiler.h"
 

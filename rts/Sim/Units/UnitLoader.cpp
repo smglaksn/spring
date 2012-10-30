@@ -32,7 +32,7 @@
 
 #include "System/EventBatchHandler.h"
 #include "System/Exceptions.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Platform/Watchdog.h"
 #include "System/TimeProfiler.h"
 

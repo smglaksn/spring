@@ -17,7 +17,7 @@
 #include "Game/LoadScreen.h"
 #include "System/Exceptions.h"
 #include "System/FastMath.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/mmgr.h"
 #include "System/TimeProfiler.h"
 #include "System/FileSystem/FileHandler.h"

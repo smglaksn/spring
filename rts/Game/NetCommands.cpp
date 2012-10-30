@@ -26,7 +26,7 @@
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Path/IPathManager.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/myMath.h"
 #include "System/NetProtocol.h"
 #include "System/LoadSave/DemoRecorder.h"

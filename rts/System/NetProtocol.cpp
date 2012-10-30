@@ -20,7 +20,7 @@
 #include "System/LoadSave/DemoRecorder.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/GlobalConfig.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "lib/gml/gmlmut.h"
 
 CONFIG(int, SourcePort).defaultValue(0);

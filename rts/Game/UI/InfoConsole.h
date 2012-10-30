@@ -6,7 +6,7 @@
 #include "InputReceiver.h"
 #include "System/float3.h"
 #include "System/EventClient.h"
-#include "System/Log/LogSinkHandler.h"
+#include "Log/LogSinkHandler.h"
 
 #include <deque>
 #include <vector>

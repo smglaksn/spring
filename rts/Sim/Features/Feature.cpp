@@ -22,7 +22,7 @@
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/Unit.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/myMath.h"
 #include <assert.h>
 

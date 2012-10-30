@@ -14,7 +14,7 @@
 
 #include "Game/Camera.h"
 #include "Rendering/ShadowHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Util.h"
 
 #include <string>

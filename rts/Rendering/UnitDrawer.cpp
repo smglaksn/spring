@@ -53,7 +53,7 @@
 
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/myMath.h"
 #include "System/Platform/Watchdog.h"
 #include "System/TimeProfiler.h"

@@ -44,7 +44,7 @@ bool gmlEnabled = true;
 
 #include "Game/UI/KeyBindings.h"
 #include "Lua/LuaConfig.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Platform/Threading.h"
 
 

@@ -6,7 +6,7 @@
 
 #include "System/Config/ConfigHandler.h"
 #include "Game/Camera.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "Map/Ground.h"
 #include "System/myMath.h"
 

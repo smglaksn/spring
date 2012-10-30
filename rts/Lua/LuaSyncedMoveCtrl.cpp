@@ -17,7 +17,7 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
 #include "System/myMath.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "LuaHelper.h"
 
 #include <cctype>

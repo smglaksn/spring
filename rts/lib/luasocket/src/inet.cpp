@@ -13,7 +13,7 @@
 #include "inet.h"
 //spring includes
 #include "restrictions.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 /*=========================================================================*\
 * Internal function prototypes.

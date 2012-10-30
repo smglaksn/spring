@@ -13,7 +13,7 @@
 #include "Rendering/Env/CubeMapHandler.h"
 #include "Rendering/Env/ISky.h"
 #include "Sim/Units/Unit.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Util.h"
 
 #include <string>

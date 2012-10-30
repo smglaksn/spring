@@ -11,7 +11,7 @@
 #include "Lua/LuaSyncedRead.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitTypes/Builder.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/Exceptions.h"

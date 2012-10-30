@@ -19,7 +19,7 @@
 #include "Rendering/Shaders/Shader.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/FastMath.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/myMath.h"
 #include "System/mmgr.h"
 

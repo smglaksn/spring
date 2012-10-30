@@ -16,7 +16,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitDef.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/NetProtocol.h"
 #include "System/mmgr.h"
 #include "System/MsgStrings.h"

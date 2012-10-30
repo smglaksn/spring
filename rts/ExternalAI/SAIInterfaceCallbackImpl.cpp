@@ -21,7 +21,7 @@ using std::sprintf;
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileQueryFlags.h"
 #include "System/FileSystem/DataDirLocater.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include <vector>
 #include <stdlib.h> // malloc(), calloc(), free()

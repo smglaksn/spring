@@ -19,7 +19,7 @@
 #include "Rendering/GL/myGL.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Exceptions.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/TdfParser.h"
 #include "System/Util.h"
 #include "System/Input/InputHandler.h"

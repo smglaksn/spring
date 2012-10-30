@@ -31,7 +31,7 @@
 #include "System/FileSystem/FileQueryFlags.h"
 #include "System/creg/Serializer.h"
 #include "System/Exceptions.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 CCregLoadSaveHandler::CCregLoadSaveHandler()
 	: ifs(NULL)

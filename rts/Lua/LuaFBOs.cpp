@@ -15,7 +15,7 @@
 #include "LuaRBOs.h"
 #include "LuaTextures.h"
 
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include <map>
 using std::map;

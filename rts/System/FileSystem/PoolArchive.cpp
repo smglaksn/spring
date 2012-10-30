@@ -14,7 +14,7 @@
 #include "FileSystem.h"
 #include "System/Util.h"
 #include "System/mmgr.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 
 CPoolArchiveFactory::CPoolArchiveFactory()

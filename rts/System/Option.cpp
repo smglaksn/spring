@@ -7,7 +7,7 @@
 
 #include "System/Util.h"
 #include "System/Exceptions.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/ArchiveScanner.h"
 #include "Lua/LuaParser.h"

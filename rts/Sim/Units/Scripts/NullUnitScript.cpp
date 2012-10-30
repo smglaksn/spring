@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "NullUnitScript.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 
 // keep one global copy so we don't need to allocate a lot of

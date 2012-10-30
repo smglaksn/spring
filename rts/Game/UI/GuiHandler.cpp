@@ -44,7 +44,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/GlobalConfig.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/myMath.h"
 #include "System/Util.h"
 #include "System/Input/KeyInput.h"

@@ -12,7 +12,7 @@
 #include "System/Util.h"
 #include "System/Exceptions.h"
 #include "System/Matrix44f.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/FileSystem/VFSHandler.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/SimpleParser.h"

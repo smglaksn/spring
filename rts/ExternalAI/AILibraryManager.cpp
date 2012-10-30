@@ -10,7 +10,7 @@
 #include "SkirmishAIData.h"
 
 #include "System/Util.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Platform/errorhandler.h"
 #include "System/Platform/SharedLib.h"
 #include "System/FileSystem/FileHandler.h"

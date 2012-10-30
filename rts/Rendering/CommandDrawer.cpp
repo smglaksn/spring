@@ -21,7 +21,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitDefHandler.h"
 #include "System/myMath.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 static bool IsUnitTrackable(const CUnit* unit, const CUnit* owner)
 {

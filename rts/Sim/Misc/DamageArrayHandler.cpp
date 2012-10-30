@@ -9,7 +9,7 @@
 
 #include "DamageArrayHandler.h"
 #include "DamageArray.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "Game/Game.h"
 #include "Lua/LuaParser.h"
 #include "System/creg/STL_Map.h"

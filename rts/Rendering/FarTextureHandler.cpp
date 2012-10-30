@@ -14,7 +14,7 @@
 #include "Rendering/Models/WorldObjectModelRenderer.h"
 #include "Sim/Objects/SolidObject.h"
 #include "System/myMath.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/bitops.h"
 
 #include "System/mmgr.h"

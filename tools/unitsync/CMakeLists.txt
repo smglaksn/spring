@@ -12,7 +12,14 @@ FIND_PACKAGE_STATIC(DevIL REQUIRED)
 LIST(APPEND unitsync_libs ${DEVIL_IL_LIBRARY} ${JPEG_LIBRARY} ${PNG_LIBRARY})
 LIST(APPEND unitsync_libs ${SPRING_MINIZIP_LIBRARY})
 LIST(APPEND unitsync_libs ${Boost_REGEX_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-LIST(APPEND unitsync_libs 7zip lua engine-filesystem headlessStubs crc)
+LIST(APPEND unitsync_libs
+		lua
+		engine-filesystem
+		headlessStubs
+		crc
+		log_sinkFile
+		log_sinkOutputDebugString
+)
 
 IF    (MINGW)
 	# We still need these header files,
@@ -75,9 +82,6 @@ endif (WIN32)
 
 set(unitsync_files
 	${sources_engine_System_FileSystem}
-	${sources_engine_System_Log}
-	${sources_engine_System_Log_sinkFile}
-	${sources_engine_System_Log_sinkOutputDebugString}
 	${main_files}
 	${CMAKE_CURRENT_SOURCE_DIR}/unitsync.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/LuaParserAPI.cpp

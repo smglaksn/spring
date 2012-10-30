@@ -21,7 +21,7 @@
 #include "ProtocolDef.h"
 #include "UDPConnection.h"
 #include "Socket.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Platform/errorhandler.h"
 #include "System/Util.h" // for IntToString (header only)
 

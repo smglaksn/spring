@@ -10,7 +10,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "System/bitops.h"
 #include "System/Util.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Exceptions.h"
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileHandler.h"

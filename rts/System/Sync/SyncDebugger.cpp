@@ -9,7 +9,7 @@
 #include "Game/PlayerHandler.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "System/BaseNetProtocol.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/NetProtocol.h"
 
 #include "HsiehHash.h"

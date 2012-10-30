@@ -33,7 +33,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/Scripts/CobInstance.h"
 #include "Sim/Weapons/Weapon.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"
 

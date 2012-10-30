@@ -2,7 +2,7 @@
 
 #include "ConfigSource.h"
 #include "ConfigVariable.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Platform/ScopedFileLock.h"
 
 #ifdef WIN32

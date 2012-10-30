@@ -12,7 +12,7 @@
 #include "Rendering/Textures/Bitmap.h"
 #include "System/Util.h"
 #include "System/Exceptions.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Platform/Threading.h"
 
 #include <algorithm>

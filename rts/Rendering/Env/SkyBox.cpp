@@ -11,7 +11,7 @@
 #include "Map/ReadMap.h"
 #include "System/Exceptions.h"
 #include "System/float3.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #define LOG_SECTION_SKY_BOX "SkyBox"
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_SKY_BOX)

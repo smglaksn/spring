@@ -13,7 +13,7 @@
 #include "System/Util.h"
 #include "System/TimeUtil.h"
 
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include <cassert>
 #include <cerrno>

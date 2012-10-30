@@ -22,7 +22,7 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/bitops.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"

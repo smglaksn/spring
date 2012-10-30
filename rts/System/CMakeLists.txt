@@ -78,26 +78,6 @@ SET(sources_engine_System_creg
 SET(sources_engine_System_FileSystem
 		"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/ArchiveScanner.cpp"
 	)
-SET(sources_engine_System_Log
-		"${CMAKE_CURRENT_SOURCE_DIR}/Log/Backend.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Log/DefaultFilter.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Log/DefaultFormatter.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Log/FramePrefixer.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Log/LogSinkHandler.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Log/LogUtil.c"
-	)
-SET(sources_engine_System_Log_sinkStream
-		"${CMAKE_CURRENT_SOURCE_DIR}/Log/StreamSink.cpp"
-	)
-SET(sources_engine_System_Log_sinkConsole
-		"${CMAKE_CURRENT_SOURCE_DIR}/Log/ConsoleSink.cpp"
-	)
-SET(sources_engine_System_Log_sinkFile
-		"${CMAKE_CURRENT_SOURCE_DIR}/Log/FileSink.cpp"
-	)
-SET(sources_engine_System_Log_sinkOutputDebugString
-		"${CMAKE_CURRENT_SOURCE_DIR}/Log/OutputDebugStringSink.cpp"
-	)
 SET(sources_engine_System_Net
 		"${CMAKE_CURRENT_SOURCE_DIR}/Net/Connection.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Net/LocalConnection.cpp"
@@ -138,9 +118,6 @@ IF     (APPLE)
 			${sources_engine_System_common}
 			${sources_engine_System_creg}
 			${sources_engine_System_FileSystem}
-			${sources_engine_System_Log}
-			${sources_engine_System_Log_sinkConsole}
-			${sources_engine_System_Log_sinkFile}
 			${sources_engine_System_Net}
 			${sources_engine_System_Platform_Mac}
 		)
@@ -149,9 +126,6 @@ ELSEIF (UNIX)
 			${sources_engine_System_common}
 			${sources_engine_System_creg}
 			${sources_engine_System_FileSystem}
-			${sources_engine_System_Log}
-			${sources_engine_System_Log_sinkConsole}
-			${sources_engine_System_Log_sinkFile}
 			${sources_engine_System_Net}
 			${sources_engine_System_Platform_Linux}
 		)
@@ -160,10 +134,6 @@ ELSEIF (WIN32)
 			${sources_engine_System_common}
 			${sources_engine_System_creg}
 			${sources_engine_System_FileSystem}
-			${sources_engine_System_Log}
-			${sources_engine_System_Log_sinkConsole}
-			${sources_engine_System_Log_sinkFile}
-			${sources_engine_System_Log_sinkOutputDebugString}
 			${sources_engine_System_Net}
 			${sources_engine_System_Platform_Windows}
 		)
@@ -172,9 +142,6 @@ ELSE   ()
 			${sources_engine_System_common}
 			${sources_engine_System_creg}
 			${sources_engine_System_FileSystem}
-			${sources_engine_System_Log}
-			${sources_engine_System_Log_sinkConsole}
-			${sources_engine_System_Log_sinkFile}
 			${sources_engine_System_Net}
 		)
 ENDIF  ()
@@ -182,11 +149,6 @@ ENDIF  ()
 MakeGlobal(sources_engine_System_common)
 MakeGlobal(sources_engine_System_creg)
 MakeGlobal(sources_engine_System_FileSystem)
-MakeGlobal(sources_engine_System_Log)
-MakeGlobal(sources_engine_System_Log_sinkStream)
-MakeGlobal(sources_engine_System_Log_sinkConsole)
-MakeGlobal(sources_engine_System_Log_sinkFile)
-MakeGlobal(sources_engine_System_Log_sinkOutputDebugString)
 MakeGlobal(sources_engine_System_Net)
 MakeGlobal(sources_engine_System_Platform_Linux)
 MakeGlobal(sources_engine_System_Platform_Mac)

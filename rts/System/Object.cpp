@@ -4,7 +4,7 @@
 #include "System/Object.h"
 #include "System/mmgr.h"
 #include "System/creg/STL_Set.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Platform/CrashHandler.h"
 
 #ifndef USE_MMGR

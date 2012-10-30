@@ -24,7 +24,7 @@
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
 #include "System/Sync/FPUCheck.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/NetProtocol.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/Platform/Watchdog.h"

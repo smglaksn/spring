@@ -10,7 +10,7 @@
 
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/VertexArray.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "IconHandler.h"
 #include "Lua/LuaParser.h"
 #include "Textures/Bitmap.h"

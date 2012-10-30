@@ -4,7 +4,7 @@
 #include "ConfigLocater.h"
 #include "ConfigSource.h"
 #include "System/Util.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #ifdef WIN32
 	#include <io.h>

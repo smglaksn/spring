@@ -21,7 +21,7 @@
 #include <cassert>
 #include <string.h>
 
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/LogOutput.h"
 #include "System/Config/ConfigHandler.h"
 #include "FileSystem.h"

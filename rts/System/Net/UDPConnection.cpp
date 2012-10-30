@@ -18,7 +18,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "CRC/CRC.h"
 #include "System/GlobalConfig.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Util.h"
 
 namespace netcode {

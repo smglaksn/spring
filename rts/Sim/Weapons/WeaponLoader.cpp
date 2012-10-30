@@ -22,7 +22,7 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "System/Exceptions.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #define DEG2RAD(a) ((a) * (3.141592653f / 180.0f))
 

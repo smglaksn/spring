@@ -19,7 +19,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "System/bitops.h"
 #include "System/ScopedFPUSettings.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/OpenMP_cond.h"
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileQueryFlags.h"

@@ -28,6 +28,8 @@ include_directories(${CMAKE_SOURCE_DIR}/rts/lib)
 #add_definitions(-DUSE_GML_SIM)
 add_definitions(${PIC_FLAG})
 
-add_library(engine-filesystem STATIC ${sources_engine_System_FileSystem})
-target_link_libraries(engine-filesystem 7zip gml crc ${SPRING_MINIZIP_LIBRARY} ${ZLIB_LIBRARY} ${Boost_REGEX_LIBRARY} ${Boost_THREAD_LIBRARY})
+add_library(engine-filesystem STATIC
+		${sources_engine_System_FileSystem}
+	)
+target_link_libraries(engine-filesystem 7zip gml crc log ${SPRING_MINIZIP_LIBRARY} ${ZLIB_LIBRARY} ${Boost_REGEX_LIBRARY} ${Boost_THREAD_LIBRARY})
 

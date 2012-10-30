@@ -12,7 +12,7 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/NetProtocol.h"
 #include "System/TimeUtil.h"
 #include "System/mmgr.h"

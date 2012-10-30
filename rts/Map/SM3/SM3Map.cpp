@@ -14,7 +14,7 @@
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/GL/myGL.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/TdfParser.h"
 #include "System/Util.h"
 #include "System/FileSystem/FileHandler.h"

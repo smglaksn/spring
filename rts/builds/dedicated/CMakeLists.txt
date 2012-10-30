@@ -68,7 +68,6 @@ ENDIF	()
 
 SET(system_files
 	${sources_engine_System_FileSystem}
-	${sources_engine_System_Log}
 	${sources_engine_System_Net}
 	${sources_engine_Platform_CrashHandler}
 	${ENGINE_SRC_ROOT_DIR}/System/Config/ConfigHandler.cpp
@@ -94,13 +93,6 @@ SET(system_files
 	${ENGINE_SRC_ROOT_DIR}/System/UnsyncedRNG.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/Util.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/float4.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/Log/Backend.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/Log/DefaultFilter.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/Log/DefaultFormatter.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/Log/FramePrefixer.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/Log/LogSinkHandler.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/Log/LogUtil.c
-	${ENGINE_SRC_ROOT_DIR}/System/Log/ConsoleSink.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/Misc/SpringTime.cpp
 	)
 IF    (WIN32)
@@ -110,7 +102,6 @@ ENDIF (WIN32)
 SET(engineDedicatedSources
 	${system_files}
 	${sources_engine_Game_Server}
-	${sources_engine_System_Log}
 	${ENGINE_SRC_ROOT_DIR}/Game/GameServer.cpp
 	${ENGINE_SRC_ROOT_DIR}/Game/ClientSetup.cpp
 	${ENGINE_SRC_ROOT_DIR}/Game/GameSetup.cpp
@@ -143,20 +134,15 @@ ENDIF (MINGW)
 
 ADD_LIBRARY(springserver SHARED
 		${ENGINE_SRC_ROOT_DIR}/Map/MapParser
-		${sources_engine_System_Log_sinkFile}
-		${sources_engine_System_Log_sinkOutputDebugString}
 	)
-TARGET_LINK_LIBRARIES(springserver springserver-static)
+TARGET_LINK_LIBRARIES(springserver springserver-static log log_sinkConsole log_sinkFile)
 
 # Compile dedicated server executable
 ADD_EXECUTABLE(engine-dedicated
 		${ENGINE_SRC_ROOT_DIR}/Map/MapParser
-		${sources_engine_System_Log_sinkConsole}
-		${sources_engine_System_Log_sinkFile}
-		${sources_engine_System_Log_sinkOutputDebugString}
 		main
 	)
-TARGET_LINK_LIBRARIES(engine-dedicated springserver-static)
+TARGET_LINK_LIBRARIES(engine-dedicated springserver-static log log_sinkConsole log_sinkFile)
 
 ### Install the executable
 INSTALL(TARGETS springserver     DESTINATION ${LIBDIR})

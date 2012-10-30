@@ -9,7 +9,7 @@
 #include "lib/streflop/streflop_cond.h"
 #include "lib/gml/gml_base.h"
 #include "System/OpenMP_cond.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Platform/errorhandler.h"
 #include "System/Platform/Threading.h"
 #ifdef _MSC_VER

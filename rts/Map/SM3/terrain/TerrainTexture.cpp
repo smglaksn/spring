@@ -11,7 +11,7 @@
 #include "TerrainTextureGLSL.h"
 #include "Lightcalc.h"
 #include "System/Util.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include <cassert>
 #include <deque>

@@ -9,7 +9,7 @@
 #include "SideParser.h"
 #include "Lua/LuaParser.h"
 #include "Lua/LuaSyncedRead.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Util.h"
 
 

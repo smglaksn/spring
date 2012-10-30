@@ -23,7 +23,7 @@
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "System/FileSystem/SimpleParser.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Util.h"
 #include "Sim/Misc/GlobalSynced.h"
 

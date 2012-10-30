@@ -5,7 +5,7 @@
 
 #include "Action.h"
 #include "Sim/Misc/GlobalSynced.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include <string>
 

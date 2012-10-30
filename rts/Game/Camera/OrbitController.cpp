@@ -9,7 +9,7 @@
 #include "Game/Camera.h"
 #include "Game/UI/MouseHandler.h"
 #include "Map/Ground.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Input/KeyInput.h"
 

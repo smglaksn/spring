@@ -5,7 +5,7 @@
 #include "QuadtreeAtlasAlloc.h"
 #include "System/Exceptions.h"
 #include "System/bitops.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 
 static int NODE_MIN_SIZE = 8;

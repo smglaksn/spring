@@ -8,7 +8,7 @@
 #include "System/Util.h"
 #include "System/Info.h"
 #include "System/Option.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include "System/FileSystem/VFSModes.h"
 

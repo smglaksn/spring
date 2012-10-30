@@ -34,7 +34,7 @@
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Util.h"
 
 bool distcmp::operator() (const CProjectile* arg1, const CProjectile* arg2) const {

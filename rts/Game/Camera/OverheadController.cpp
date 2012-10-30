@@ -12,7 +12,7 @@
 #include "Game/UI/MouseHandler.h"
 #include "Map/Ground.h"
 #include "Rendering/GlobalRendering.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/myMath.h"
 #include "System/Input/KeyInput.h"
 

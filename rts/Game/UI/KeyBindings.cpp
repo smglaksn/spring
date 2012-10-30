@@ -18,8 +18,8 @@
 #include "Sim/Units/UnitDefHandler.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/SimpleParser.h"
-#include "System/Log/ILog.h"
-#include "System/Log/DefaultFilter.h"
+#include "Log/ILog.h"
+#include "Log/DefaultFilter.h"
 #include "System/Util.h"
 
 #ifdef LOG_SECTION_CURRENT

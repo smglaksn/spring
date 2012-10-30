@@ -23,7 +23,7 @@
 #include "System/EventHandler.h"
 #include "System/Matrix44f.h"
 #include "System/myMath.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #define SHADOWMATRIX_NONLINEAR      0
 

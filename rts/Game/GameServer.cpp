@@ -53,7 +53,7 @@
 #endif
 #include "System/Config/ConfigHandler.h"
 #include "System/GlobalConfig.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "CRC/CRC.h"
 #include "System/FileSystem/SimpleParser.h"
 #include "System/MsgStrings.h"

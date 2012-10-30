@@ -9,7 +9,7 @@
 #include "Rendering/Textures/Bitmap.h"
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction

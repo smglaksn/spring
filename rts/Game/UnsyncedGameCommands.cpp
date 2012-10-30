@@ -72,7 +72,7 @@
 #include "UI/ProfileDrawer.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/GlobalConfig.h"
 #include "System/NetProtocol.h"
 #include "System/Input/KeyInput.h"

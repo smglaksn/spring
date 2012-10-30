@@ -8,7 +8,7 @@
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/myMath.h"
 
 using std::min;

@@ -4,7 +4,7 @@
 
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/GlobalRendering.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Util.h"
 
 #include <cassert>

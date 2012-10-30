@@ -7,10 +7,10 @@
 #include "Game/GameVersion.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/FileSystem/FileSystem.h"
-#include "System/Log/DefaultFilter.h"
-#include "System/Log/FileSink.h"
-#include "System/Log/ILog.h"
-#include "System/Log/Level.h"
+#include "Log/DefaultFilter.h"
+#include "Log/FileSink.h"
+#include "Log/ILog.h"
+#include "Log/Level.h"
 #include "System/mmgr.h"
 
 #include <string>

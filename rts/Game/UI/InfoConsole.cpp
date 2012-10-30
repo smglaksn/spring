@@ -10,7 +10,7 @@
 #include "Rendering/glFont.h"
 #include "System/EventHandler.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Log/LogSinkHandler.h"
+#include "Log/LogSinkHandler.h"
 
 #include <fstream>
 

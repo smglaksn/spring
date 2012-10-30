@@ -14,7 +14,7 @@
 #include "System/bitops.h"
 #include "System/TimeProfiler.h"
 #include "System/Vec2.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #ifdef _MSC_VER
 	#include <map>

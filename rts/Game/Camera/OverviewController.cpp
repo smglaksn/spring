@@ -8,7 +8,7 @@
 #include "Game/UI/MiniMap.h"
 #include "Game/UI/MouseHandler.h"
 #include "Sim/Misc/GlobalConstants.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 COverviewController::COverviewController()
 {

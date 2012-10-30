@@ -6,7 +6,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/myGL.h"
 #include "Game/GameVersion.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/SpringApp.h"
 #include "System/Platform/Threading.h"
 

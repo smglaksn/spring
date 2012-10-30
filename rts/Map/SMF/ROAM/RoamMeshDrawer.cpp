@@ -23,7 +23,7 @@
 #include "System/Rectangle.h"
 #include "System/TimeProfiler.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #ifdef DRAW_DEBUG_IN_MINIMAP
 	#include "Game/UI/MiniMap.h"

@@ -38,7 +38,7 @@
 
 #include "System/Util.h"
 #include "System/SafeCStrings.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/FileSystem/FileSystem.h"
 
 #if       defined WIN32

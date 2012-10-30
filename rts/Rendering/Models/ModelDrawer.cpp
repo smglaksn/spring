@@ -12,7 +12,7 @@
 #include "Sim/Projectiles/Projectile.h"
 #include "Sim/Units/Unit.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 /// If set to true, additional stuff will be rendered
 #define MODEL_DRAWER_DEBUG_RENDERING 0

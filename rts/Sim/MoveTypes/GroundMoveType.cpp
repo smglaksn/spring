@@ -29,7 +29,7 @@
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Sim/Weapons/Weapon.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/FastMath.h"
 #include "System/myMath.h"
 #include "System/Vec2.h"

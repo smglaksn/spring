@@ -7,7 +7,7 @@
 #include "Interface/SAIInterfaceLibrary.h"
 #include "System/Util.h"
 #include "System/Info.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include "System/FileSystem/VFSModes.h"
 

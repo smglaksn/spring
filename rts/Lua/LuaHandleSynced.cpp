@@ -46,7 +46,7 @@
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "System/EventHandler.h"
 #include "System/GlobalConfig.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"
 

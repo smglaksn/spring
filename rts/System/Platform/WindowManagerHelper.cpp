@@ -6,7 +6,7 @@
 #include <SDL_video.h>
 
 #include "Rendering/Textures/Bitmap.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 
 SDL_Surface* WindowManagerHelper::currentIcon = NULL;

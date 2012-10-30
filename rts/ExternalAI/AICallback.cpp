@@ -52,7 +52,7 @@
 #include "ExternalAI/EngineOutHandler.h"
 #include "System/mmgr.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/NetProtocol.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/DataDirsAccess.h"

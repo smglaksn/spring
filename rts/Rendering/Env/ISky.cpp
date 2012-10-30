@@ -10,7 +10,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Exceptions.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 CONFIG(bool, DynamicSun).defaultValue(false);
 CONFIG(bool, AdvSky).defaultValue(true).defaultValue(false);

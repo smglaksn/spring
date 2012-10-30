@@ -5,7 +5,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GlobalRendering.h"
 #include "System/FileSystem/FileHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include <algorithm>
 
 

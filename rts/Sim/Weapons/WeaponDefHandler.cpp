@@ -16,7 +16,7 @@
 #include "Sim/Misc/DamageArrayHandler.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Units/Scripts/CobInstance.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Util.h"
 #include "System/Exceptions.h"
 #include "System/myMath.h"

@@ -8,7 +8,7 @@
 
 #include "System/Platform/CrashHandler.h"
 #include "System/Platform/errorhandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Log/LogSinkHandler.h"
 #include "System/LogOutput.h"
 #include "System/NetProtocol.h"

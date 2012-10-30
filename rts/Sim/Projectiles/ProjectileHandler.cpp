@@ -23,7 +23,7 @@
 #include "Sim/Units/UnitDef.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/TimeProfiler.h"
 #include "System/creg/STL_Map.h"
 #include "System/creg/STL_List.h"

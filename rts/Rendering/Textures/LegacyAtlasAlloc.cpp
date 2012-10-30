@@ -3,7 +3,7 @@
 #include "System/mmgr.h"
 
 #include "LegacyAtlasAlloc.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Exceptions.h"
 
 

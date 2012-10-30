@@ -4,7 +4,7 @@
 #include "AutohostInterface.h"
 
 #include "System/BaseNetProtocol.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Net/Socket.h"
 
 #include <string.h>

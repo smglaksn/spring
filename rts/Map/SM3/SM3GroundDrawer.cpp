@@ -15,7 +15,7 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/GL/myGL.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include <SDL_keysym.h>
 

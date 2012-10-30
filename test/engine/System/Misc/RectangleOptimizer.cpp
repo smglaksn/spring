@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "System/Misc/RectangleOptimizer.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include <vector>
 #include <stdlib.h>
 #include <time.h>

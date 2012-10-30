@@ -12,7 +12,7 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/FastMath.h"
 #include "System/Matrix44f.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 CR_BIND(CCollisionHandler, );
 

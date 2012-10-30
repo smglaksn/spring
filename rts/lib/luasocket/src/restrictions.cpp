@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Config/ConfigHandler.h"
 
 #ifndef TEST

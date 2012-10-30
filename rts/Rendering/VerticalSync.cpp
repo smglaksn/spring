@@ -5,7 +5,7 @@
 #include "VerticalSync.h"
 #include "GL/myGL.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #if defined HEADLESS
 #elif defined WIN32

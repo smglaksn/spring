@@ -13,7 +13,7 @@
 #include "VertexArray.h"
 #include "VertexArrayRange.h"
 #include "Rendering/GlobalRendering.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Exceptions.h"
 #include "System/TimeProfiler.h"
 #include "System/Config/ConfigHandler.h"

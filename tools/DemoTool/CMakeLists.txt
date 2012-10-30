@@ -10,6 +10,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 SET(ENGINE_SRC_ROOT_DIR "${CMAKE_SOURCE_DIR}/rts")
 
 INCLUDE_DIRECTORIES(${ENGINE_SRC_ROOT_DIR})
+INCLUDE_DIRECTORIES(${ENGINE_SRC_ROOT_DIR}/lib)
 INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/src-generated/engine)
 
 SET(demoToolSpringSources
@@ -19,13 +20,6 @@ SET(demoToolSpringSources
 	${ENGINE_SRC_ROOT_DIR}/System/Net/RawPacket.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/LoadSave/DemoReader.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/LoadSave/Demo.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/Log/Backend.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/Log/DefaultFilter.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/Log/DefaultFormatter.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/Log/FramePrefixer.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/Log/LogSinkHandler.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/Log/LogUtil.c
-	${ENGINE_SRC_ROOT_DIR}/System/Log/ConsoleSink.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/SafeCStrings.c
 )
 
@@ -34,7 +28,7 @@ IF (MINGW)
 	# To enable console output/force a console window to open
 	SET_TARGET_PROPERTIES(demotool PROPERTIES LINK_FLAGS "-Wl,-subsystem,console")
 ENDIF (MINGW)
-TARGET_LINK_LIBRARIES(demotool ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+TARGET_LINK_LIBRARIES(demotool log log_sinkConsole ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_SYSTEM_LIBRARY})
 Add_Dependencies(demotool generateVersionFiles)
 
 

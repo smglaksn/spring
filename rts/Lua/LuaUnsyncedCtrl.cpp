@@ -53,7 +53,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/GlobalConfig.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/NetProtocol.h"
 #include "System/Net/PackPacket.h"
 #include "System/Util.h"

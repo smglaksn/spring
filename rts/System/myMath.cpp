@@ -6,7 +6,7 @@
 
 #include "System/myMath.h"
 #include "System/Sync/FPUCheck.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Platform/errorhandler.h"
 #include "Sim/Units/Scripts/CobInstance.h" // for TAANG2RAD (ugh)
 

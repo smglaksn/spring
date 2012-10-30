@@ -59,7 +59,7 @@
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Sim/Weapons/WeaponLoader.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Matrix44f.h"
 #include "System/myMath.h"
 #include "System/creg/STL_List.h"

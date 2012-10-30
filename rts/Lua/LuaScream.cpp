@@ -8,7 +8,7 @@
 
 #include "LuaHashString.h"
 
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 
 /******************************************************************************/

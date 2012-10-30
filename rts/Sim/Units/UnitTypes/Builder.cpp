@@ -25,7 +25,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitLoader.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Sound/SoundChannels.h"
 #include "System/mmgr.h"
 

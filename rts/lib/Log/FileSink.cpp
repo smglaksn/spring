@@ -6,8 +6,8 @@
 #include "FramePrefixer.h"
 #include "Level.h" // for LOG_LEVEL_*
 #include "System/maindefines.h"
-#include "System/Log/ILog.h"
-#include "System/Log/Level.h"
+#include "ILog.h"
+#include "Level.h"
 
 #include <cassert>
 #include <cstdio>

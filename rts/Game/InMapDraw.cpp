@@ -23,7 +23,7 @@
 #include "System/EventClient.h"
 #include "System/BaseNetProtocol.h"
 #include "System/NetProtocol.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Sound/ISound.h"
 #include "System/Sound/SoundChannels.h"
 

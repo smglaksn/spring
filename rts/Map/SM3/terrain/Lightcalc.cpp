@@ -11,7 +11,7 @@
 #include "Rendering/GL/myGL.h"
 #include "System/Matrix44f.h"
 #include "System/Util.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include <IL/il.h>
 #include <assert.h>

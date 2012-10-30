@@ -14,7 +14,7 @@
 #include "System/TdfParser.h"
 #include "tdf_grammar.h"
 #include "System/FileSystem/FileHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 TdfParser::parse_error::parse_error(size_t l, size_t c, std::string const& f) throw()
 	: content_error("Parse error in " + f + " at line " + IntToString(l) + " column " + IntToString(c) + ".")

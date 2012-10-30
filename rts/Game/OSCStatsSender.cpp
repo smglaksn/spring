@@ -11,7 +11,7 @@
 #include "PlayerHandler.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Net/Socket.h"
 
 #include "lib/streflop/streflop_cond.h"

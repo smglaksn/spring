@@ -8,7 +8,7 @@
 #include "Sim/Features/Feature.h"
 #include "Sim/Projectiles/Projectile.h"
 #include "Sim/Units/Unit.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #define LOG_SECTION_WORLD_OBJECT_MODEL_RENDERER "WorldObjectModelRenderer"
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_WORLD_OBJECT_MODEL_RENDERER)

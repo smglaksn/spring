@@ -4,7 +4,7 @@
 #ifdef TRACE_SYNC
 
 #include "SyncTracer.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include <cstdio>
 

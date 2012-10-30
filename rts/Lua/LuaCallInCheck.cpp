@@ -4,7 +4,7 @@
 
 #include "LuaCallInCheck.h"
 #include "LuaInclude.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 
 /******************************************************************************/

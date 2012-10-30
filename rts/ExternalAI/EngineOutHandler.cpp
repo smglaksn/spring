@@ -20,7 +20,7 @@
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/NetProtocol.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Util.h"
 #include "System/TimeProfiler.h"
 

@@ -21,15 +21,9 @@ Else  (NOT Boost_FOUND)
 	EndIf	(NOT (WIN32 OR Boost_USE_STATIC_LIBS))
 	add_definitions(-DSYNCCHECK -DUNIT_TEST)
 
-	Set(test_Log_sources
-			"${ENGINE_SOURCE_DIR}/System/SafeCStrings.c"
-			"${ENGINE_SOURCE_DIR}/System/Log/Backend.cpp"
-			"${ENGINE_SOURCE_DIR}/System/Log/LogUtil.c"
-			"${ENGINE_SOURCE_DIR}/System/Log/DefaultFilter.cpp"
-			"${ENGINE_SOURCE_DIR}/System/Log/DefaultFormatter.cpp"
-			"${ENGINE_SOURCE_DIR}/System/Log/FramePrefixer.cpp"
-			"${ENGINE_SOURCE_DIR}/System/Log/ConsoleSink.cpp"
-			"${ENGINE_SOURCE_DIR}/System/Log/StreamSink.cpp"
+	Set(test_Log
+			log
+			log_sinkConsole
 		)
 
 	Add_Custom_Target(tests)
@@ -52,7 +46,6 @@ Else  (NOT Boost_FOUND)
 			"${ENGINE_SOURCE_DIR}/System/Net/Socket.cpp"
 			"${CMAKE_CURRENT_SOURCE_DIR}/engine/System/NullGlobalConfig.cpp"
 			"${CMAKE_CURRENT_SOURCE_DIR}/engine/System/Nullerrorhandler.cpp"
-			${test_Log_sources}
 		)
 
 	ADD_EXECUTABLE(test_UDPListener ${test_UDPListener_src})
@@ -61,6 +54,7 @@ Else  (NOT Boost_FOUND)
 			${Boost_SYSTEM_LIBRARY}
 			${SDL_LIBRARY}
 			${WS2_32_LIBRARY}
+			${test_Log}
 			crc
 		)
 
@@ -74,14 +68,15 @@ Else  (NOT Boost_FOUND)
 
 	Set(test_ILog_src
 			"${CMAKE_CURRENT_SOURCE_DIR}/engine/System/Log/TestILog.cpp"
-			"${ENGINE_SOURCE_DIR}/System/Log/FileSink.cpp"
-			"${ENGINE_SOURCE_DIR}/System/Log/OutputDebugStringSink.cpp"
-			${test_Log_sources}
 		)
 
 	ADD_EXECUTABLE(test_ILog ${test_ILog_src})
 	TARGET_LINK_LIBRARIES(test_ILog
 			${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+			${test_Log}
+			log_sinkFile
+			log_sinkOutputDebugString
+			log_sinkStream
 		)
 
 	ADD_TEST(NAME testILog COMMAND test_ILog)
@@ -112,13 +107,13 @@ Else  (NOT Boost_FOUND)
 	Set(test_RectangleOptimizer_src
 			"${CMAKE_CURRENT_SOURCE_DIR}/engine/System/Misc/RectangleOptimizer.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Misc/RectangleOptimizer.cpp"
-			${test_Log_sources}
 		)
 
 	ADD_EXECUTABLE(test_RectangleOptimizer ${test_RectangleOptimizer_src})
 	TARGET_LINK_LIBRARIES(test_RectangleOptimizer
 			${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
 			${Boost_SYSTEM_LIBRARY}
+			${test_Log}
 		)
 
 	ADD_TEST(NAME testRectangleOptimizer COMMAND test_RectangleOptimizer)
@@ -135,6 +130,7 @@ Else  (NOT Boost_FOUND)
 	ADD_EXECUTABLE(test_BitwiseEnum ${test_BitwiseEnum_src})
 	TARGET_LINK_LIBRARIES(test_BitwiseEnum
 			${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+			${test_Log}
 		)
 
 	# positive tests (should compile fine)
@@ -155,13 +151,13 @@ Else  (NOT Boost_FOUND)
 			"${ENGINE_SOURCE_DIR}/System/FileSystem/FileSystemAbstraction.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Util.cpp"
 			"${CMAKE_CURRENT_SOURCE_DIR}/engine/System/FileSystem/TestFileSystem.cpp"
-			${test_Log_sources}
 		)
 
 	ADD_EXECUTABLE(test_FileSystem ${test_FileSystem_src})
 	TARGET_LINK_LIBRARIES(test_FileSystem
 			${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
 			${Boost_REGEX_LIBRARY}
+			${test_Log}
 		)
 
 	ADD_TEST(NAME testFileSystem COMMAND test_FileSystem)
@@ -174,13 +170,13 @@ Else  (NOT Boost_FOUND)
 	Set(test_LuaSocketRestrictions_src
 			"${CMAKE_CURRENT_SOURCE_DIR}/lib/luasocket/TestRestriction.cpp"
 			"${ENGINE_SOURCE_DIR}/lib/luasocket/src/restrictions.cpp"
-			${test_Log_sources}
 		)
 
 	ADD_EXECUTABLE(test_LuaSocketRestrictions ${test_LuaSocketRestrictions_src})
 	TARGET_LINK_LIBRARIES(test_LuaSocketRestrictions
 			${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
 			${Boost_REGEX_LIBRARY}
+			${test_Log}
 		)
 
 	ADD_TEST(NAME LuaSocketRestrictions COMMAND test_LuaSocketRestrictions)

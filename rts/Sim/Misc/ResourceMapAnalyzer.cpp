@@ -20,7 +20,7 @@ using std::fclose;
 #include "Map/MetalMap.h"
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileQueryFlags.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include <stdexcept>
 

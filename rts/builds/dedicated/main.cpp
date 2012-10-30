@@ -19,7 +19,7 @@
 #include "System/FileSystem/VFSHandler.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/LoadSave/DemoRecorder.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/LogOutput.h"
 #include "System/Platform/CmdLineParams.h"
 #include "System/Platform/CrashHandler.h"

@@ -3,7 +3,7 @@
 #include "IPathManager.h"
 #include "Default/PathManager.h"
 #include "QTPFS/PathManager.hpp"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 IPathManager* pathManager = NULL;
 

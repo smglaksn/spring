@@ -21,8 +21,8 @@
 #include "thread_backtrace.h"
 #include "System/FileSystem/FileSystem.h"
 #include "Game/GameVersion.h"
-#include "System/Log/ILog.h"
-#include "System/Log/LogSinkHandler.h"
+#include "Log/ILog.h"
+#include "Log/LogSinkHandler.h"
 #include "System/LogOutput.h"
 #include "System/maindefines.h" // for SNPRINTF
 #include "System/Misc/SpringTime.h"

@@ -19,7 +19,7 @@
 #include "FileSystem.h"
 #include "FileQueryFlags.h"
 #include "Lua/LuaParser.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "CRC/CRC.h"
 #include "System/Util.h"
 #include "System/Exceptions.h"

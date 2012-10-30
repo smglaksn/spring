@@ -11,7 +11,7 @@
 #include "Rendering/GL/VertexArray.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "System/float3.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 CR_BIND_DERIVED(CSimpleParticleSystem, CProjectile, );
 

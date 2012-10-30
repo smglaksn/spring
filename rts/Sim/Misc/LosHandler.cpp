@@ -12,7 +12,7 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Map/ReadMap.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/TimeProfiler.h"
 #include "System/creg/STL_Deque.h"
 #include "System/creg/STL_List.h"

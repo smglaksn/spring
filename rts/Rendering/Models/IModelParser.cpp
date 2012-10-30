@@ -15,7 +15,7 @@
 #include "Sim/Misc/CollisionVolume.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/Util.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Exceptions.h"
 #include "lib/gml/gml_base.h"
 #include "lib/assimp/include/assimp/Importer.hpp"

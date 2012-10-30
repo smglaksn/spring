@@ -11,7 +11,7 @@
 #endif
 #define LOG_SECTION_CURRENT LOG_SECTION_PATH
 
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_PATH)
 

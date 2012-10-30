@@ -9,7 +9,7 @@
 
 #include "MapParser.h"
 #include "Lua/LuaParser.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Exceptions.h"
 
 #if !defined(HEADLESS) && !defined(NO_SOUND)

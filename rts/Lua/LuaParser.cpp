@@ -17,7 +17,7 @@
 #include "LuaIO.h"
 #include "LuaUtils.h"
 
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/VFSHandler.h"
 #include "System/FileSystem/FileSystem.h"

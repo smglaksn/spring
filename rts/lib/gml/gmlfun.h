@@ -12,7 +12,7 @@
 
 #include <set>
 #include <map>
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include <SDL_timer.h>
 #include <string.h>
 #include <string>

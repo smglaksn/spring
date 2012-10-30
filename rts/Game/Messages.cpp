@@ -12,7 +12,7 @@
 #include "Messages.h"
 #include "Game/GlobalUnsynced.h"
 #include "Lua/LuaParser.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Util.h"
 
 using std::string;

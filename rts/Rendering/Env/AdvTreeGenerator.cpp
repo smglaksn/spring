@@ -17,7 +17,7 @@
 #include "Rendering/GL/VertexArray.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Exceptions.h"
 
 using std::max;

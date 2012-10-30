@@ -7,7 +7,7 @@
 
 #include "System/mmgr.h"
 #include "lib/gml/gmlmut.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/UnsyncedRNG.h"
 
 static std::map<const std::string, int> refs;

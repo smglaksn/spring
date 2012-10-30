@@ -48,7 +48,7 @@
 #include "System/Exceptions.h"
 #include "System/Sync/FPUCheck.h"
 #include "System/GlobalConfig.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/myMath.h"
 #include "System/OpenMP_cond.h"
 #include "System/TimeProfiler.h"

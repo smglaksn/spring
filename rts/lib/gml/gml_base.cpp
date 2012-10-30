@@ -11,7 +11,7 @@
 #include "System/OffscreenGLContext.h"
 #include "System/SpringApp.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Platform/Threading.h"
 #include "System/Platform/Watchdog.h"
 

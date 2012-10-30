@@ -14,8 +14,8 @@
 
 #include "Game/GameServer.h"
 #include "Game/GlobalUnsynced.h"
-#include "System/Log/ILog.h"
-#include "System/Log/LogSinkHandler.h"
+#include "Log/ILog.h"
+#include "Log/LogSinkHandler.h"
 #include "System/Util.h"
 
 #if !defined(DEDICATED) || defined(_MSC_VER)

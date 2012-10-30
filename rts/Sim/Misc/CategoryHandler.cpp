@@ -9,7 +9,7 @@
 
 #include "System/creg/STL_Map.h"
 #include "System/Util.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "lib/gml/gmlmut.h"
 
 CR_BIND(CCategoryHandler, );

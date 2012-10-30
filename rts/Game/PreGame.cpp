@@ -41,7 +41,7 @@
 #include "System/LoadSave/DemoRecorder.h"
 #include "System/LoadSave/DemoReader.h"
 #include "System/LoadSave/LoadSaveHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Net/RawPacket.h"
 #include "System/Net/UnpackPacket.h"
 #include "System/Platform/errorhandler.h"

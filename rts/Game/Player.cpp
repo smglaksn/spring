@@ -22,7 +22,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "System/myMath.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 CR_BIND(CPlayer,);
 

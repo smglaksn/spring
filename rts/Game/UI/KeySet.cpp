@@ -6,7 +6,7 @@
 #include "KeySet.h"
 #include "KeyCodes.h"
 
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Util.h"
 #include "System/Input/KeyInput.h"
 

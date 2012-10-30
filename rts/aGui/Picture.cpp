@@ -5,7 +5,7 @@
 
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Textures/Bitmap.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 namespace agui
 {

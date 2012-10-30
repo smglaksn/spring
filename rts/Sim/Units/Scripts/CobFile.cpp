@@ -5,7 +5,7 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "CobFile.h"
 #include "System/FileSystem/FileHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/Sound/ISound.h"
 #include "System/Platform/byteorder.h"
 #include "System/Util.h"

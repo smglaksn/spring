@@ -3,7 +3,7 @@
 #if defined BUILDING_AI
 #include "System/Util.h"
 #else // defined BUILDING_AI
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #endif // defined BUILDING_AI
 
 // OS dependent stuff

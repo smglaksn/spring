@@ -40,7 +40,7 @@
 #include "System/SafeCStrings.h"
 #include "System/myMath.h"
 #include "System/FileSystem/ArchiveScanner.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 
 static const char* SKIRMISH_AIS_VERSION_COMMON = "common";

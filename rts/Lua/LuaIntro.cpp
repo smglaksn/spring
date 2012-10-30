@@ -23,7 +23,7 @@
 #include "LuaZip.h"
 #include "Rendering/IconHandler.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/VFSHandler.h"
 #include "System/Config/ConfigHandler.h"

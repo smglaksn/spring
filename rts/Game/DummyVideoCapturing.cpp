@@ -2,7 +2,7 @@
 
 #include "DummyVideoCapturing.h"
 
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include <cstdlib> // for NULL
 

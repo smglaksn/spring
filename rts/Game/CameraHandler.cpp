@@ -20,7 +20,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "System/myMath.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 
 static std::string strformat(const char* fmt, ...)

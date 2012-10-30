@@ -6,7 +6,7 @@
 #include "ExternalAI/SkirmishAIHandler.h"
 #include "ExternalAI/AIInterfaceKey.h"
 #include "Sim/Misc/GlobalConstants.h"
-#include "System/Log/ILog.h"
+#include "Log/ILog.h"
 
 #include <string>
 
