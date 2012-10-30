@@ -80,6 +80,11 @@ void LocalModel::DrawPiecesLOD(unsigned int lod) const
 	}
 }
 
+void LocalModel::SetLODCount(unsigned int count)
+{
+	pieces[0]->SetLODCount(lodCount = count);
+}
+
 
 
 void LocalModel::ReloadDisplayLists()
@@ -106,32 +111,21 @@ LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParen
 }
 
 
-void LocalModel::SetLODCount(unsigned int count)
-{
-	pieces[0]->SetLODCount(lodCount = count);
-}
-
-void LocalModel::ApplyRawPieceTransformUnsynced(int pieceIdx) const
-{
-	glMultMatrixf(pieces[pieceIdx]->GetModelSpaceMatrix());
-}
-
-
 
 /** ****************************************************************************************************
  * LocalModelPiece
  */
 
 LocalModelPiece::LocalModelPiece(const S3DModelPiece* piece)
-	: original(piece)
-	, parent(NULL) // set later
-	, colvol(new CollisionVolume(piece->GetCollisionVolume()))
-
+	: colvol(new CollisionVolume(piece->GetCollisionVolume()))
 	, numUpdatesSynced(1)
+
 	, lastMatrixUpdate(0)
 
 	, scriptSetVisible(!piece->isEmpty)
 	, identityTransform(true)
+	, original(piece)
+	, parent(NULL) // set later
 {
 	assert(piece != NULL);
 
@@ -197,10 +191,6 @@ void LocalModelPiece::Draw() const
 {
 	if (!scriptSetVisible)
 		return;
-	if (identityTransform) {
-		glCallList(dispListID);
-		return;
-	}
 
 	glPushMatrix();
 	glMultMatrixf(modelSpaceMat);
@@ -212,10 +202,6 @@ void LocalModelPiece::DrawLOD(unsigned int lod) const
 {
 	if (!scriptSetVisible)
 		return;
-	if (identityTransform) {
-		glCallList(lodDispLists[lod]);
-		return;
-	}
 
 	glPushMatrix();
 	glMultMatrixf(modelSpaceMat);

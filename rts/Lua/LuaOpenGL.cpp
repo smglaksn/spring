@@ -1494,7 +1494,7 @@ int LuaOpenGL::UnitPiece(lua_State* L)
 	if (unit == NULL) {
 		return 0;
 	}
-	const LocalModel* localModel = unit->localmodel;
+	const LocalModel* localModel = unit->localModel;
 
 	const int piece = luaL_checkint(L, 2) - 1;
 	if ((piece < 0) || ((size_t)piece >= localModel->pieces.size())) {
@@ -1510,46 +1510,28 @@ int LuaOpenGL::UnitPiece(lua_State* L)
 
 int LuaOpenGL::UnitPieceMatrix(lua_State* L)
 {
-	CUnit* unit = ParseUnit(L, __FUNCTION__, 1);
-	if (unit == NULL) {
-		return 0;
-	}
-	const LocalModel* localModel = unit->localmodel;
-	if (localModel == NULL) {
-		return 0;
-	}
-	const int piece = luaL_checkint(L, 2) - 1;
-	if ((piece < 0) || ((size_t)piece >= localModel->pieces.size())) {
-		return 0;
-	}
-
-	CMatrix44f matrix = localModel->GetRawPieceMatrix(piece);
-	glMultMatrixf(matrix.m);
-
-	return 0;
+	return (UnitPieceMultMatrix(L));
 }
-
 
 int LuaOpenGL::UnitPieceMultMatrix(lua_State* L)
 {
 	CheckDrawingEnabled(L, __FUNCTION__);
 
-	CUnit* unit = ParseUnit(L, __FUNCTION__, 1);
+	const CUnit* unit = ParseUnit(L, __FUNCTION__, 1);
 	if (unit == NULL) {
 		return 0;
 	}
 
-	const LocalModel* localModel = unit->localmodel;
+	const LocalModel* localModel = unit->localModel;
 	if (localModel == NULL) {
 		return 0;
 	}
-	const int piece = luaL_checkint(L, 2) - 1;
-	if ((piece < 0) || ((size_t)piece >= localModel->pieces.size())) {
+	const unsigned int piece = luaL_checkint(L, 2) - 1;
+	if (piece >= localModel->pieces.size()) {
 		return 0;
 	}
 
-	localModel->ApplyRawPieceTransformUnsynced(piece);
-
+	glMultMatrixf(localModel->GetRawPieceMatrix(piece));
 	return 0;
 }
 

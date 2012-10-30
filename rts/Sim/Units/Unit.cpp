@@ -157,7 +157,7 @@ CUnit::CUnit() : CSolidObject(),
 	fpsControlPlayer(NULL),
 	commandAI(NULL),
 	group(NULL),
-	localmodel(NULL),
+	localModel(NULL),
 	script(NULL),
 	condUseMetal(0.0f),
 	condUseEnergy(0.0f),
@@ -320,7 +320,7 @@ CUnit::~CUnit()
 	los = NULL;
 	radarhandler->RemoveUnit(this);
 
-	modelParser->DeleteLocalModel(localmodel);
+	modelParser->DeleteLocalModel(localModel);
 }
 
 
@@ -357,9 +357,9 @@ void CUnit::PreInit(const UnitDef* uDef, int uTeam, int facing, const float3& po
 	// copy the UnitDef volume instance
 	// NOTE: gets deleted in ~CSolidObject
 	model = unitDef->LoadModel();
-	localmodel = new LocalModel(model);
+	localModel = new LocalModel(model);
 	collisionVolume = new CollisionVolume(unitDef->collisionVolume);
-	modelParser->CreateLocalModel(localmodel);
+	modelParser->CreateLocalModel(localModel);
 
 	if (collisionVolume->DefaultToSphere())
 		collisionVolume->InitSphere(model->radius);
@@ -686,7 +686,7 @@ void CUnit::Update()
 	// we apply the forward kinematics update separately
 	// (only if we have any dirty pieces)
 	// TODO: move this to UnitScript::Tick?
-	localmodel->UpdatePieceMatrices();
+	localModel->UpdatePieceMatrices();
 
 	{
 		const bool oldInAir   = inAir;
@@ -2180,12 +2180,12 @@ void CUnit::PostLoad()
 	unitDef = unitDefHandler->GetUnitDefByID(unitDefID);
 	objectDef = unitDef;
 	model = unitDef->LoadModel();
-	localmodel = new LocalModel(model);
+	localModel = new LocalModel(model);
 	blockMap = (unitDef->GetYardMap().empty())? NULL: &unitDef->GetYardMap()[0];
 
 	SetRadiusAndHeight(model->radius, model->height);
 
-	modelParser->CreateLocalModel(localmodel);
+	modelParser->CreateLocalModel(localModel);
 	// FIXME: how to handle other script types (e.g. Lua) here?
 	script = CUnitScriptFactory::CreateScript("scripts/" + unitDef->scriptName, this);
 
@@ -2852,7 +2852,7 @@ CR_REG_METADATA(CUnit, (
 	CR_MEMBER(commandAI),
 	CR_MEMBER(group),
 	// CR_MEMBER(fpsControlPlayer),
-	// CR_MEMBER(localmodel),
+	// CR_MEMBER(localModel),
 	// CR_MEMBER(script),
 	CR_MEMBER(condUseMetal),
 	CR_MEMBER(condUseEnergy),

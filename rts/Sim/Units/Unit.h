@@ -352,7 +352,7 @@ public:
 	/// if the unit is part of an group (hotkey group)
 	CGroup* group;
 
-	LocalModel* localmodel;
+	LocalModel* localModel;
 	CUnitScript* script;
 
 	// only when the unit is active
