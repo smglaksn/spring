@@ -114,15 +114,12 @@ public:
 	const UnitDef* udef; /// type of unit this feature should be resurrected to
 
 #if STABLE_UPDATE
-	bool stableReachedFinalPos, *pStableReachedFinalPos;
 	// shall return "stable" values, that do not suddenly change during a sim frame. (for multithreading purposes)
-	bool StableReachedFinalPos() { return *pStableReachedFinalPos; }
-
 	void StableInit(bool stable);
 	virtual void StableUpdate(bool slow);
 	void StableSlowUpdate();
 #else
-	bool StableReachedFinalPos() { return reachedFinalPos; }
+	// no stable data
 #endif
 
 	CFireProjectile* myFire;

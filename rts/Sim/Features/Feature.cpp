@@ -681,7 +681,6 @@ void CFeature::ExecuteDelayOps() {
 
 #if STABLE_UPDATE
 void CFeature::StableSlowUpdate() {
-	stableReachedFinalPos = reachedFinalPos;
 	CSolidObject::StableSlowUpdate();
 }
 
@@ -692,11 +691,6 @@ void CFeature::StableUpdate(bool slow) {
 }
 
 void CFeature::StableInit(bool stable) {
-	if (stable) {
-		pStableReachedFinalPos = &stableReachedFinalPos;
-	} else {
-		pStableReachedFinalPos = &reachedFinalPos;
-	}
 	CSolidObject::StableInit(stable);
 }
 #endif
