@@ -1773,7 +1773,7 @@ void CGroundMoveType::HandleFeatureCollisions(
 
 		owner->QueUnitFeatureCollision(collidee);
 
-		if (collidee->StableReachedFinalPos()) {
+		if (collidee->StableIsMoving()) {
 			HandleStaticObjectCollision(
 				collider,
 				collidee,

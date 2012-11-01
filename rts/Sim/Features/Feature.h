@@ -46,15 +46,17 @@ public:
 	 */
 	bool AddBuildPower(float amount, CUnit* builder);
 	void DoDamage(const DamageArray& damages, const float3& impulse, CUnit* attacker, int weaponDefID);
-	void ForcedMove(const float3& newPos, bool snapToGround = true);
+	void ForcedMove(const float3& newPos);
 	void ForcedSpin(const float3& newDir);
 	bool Update();
 	bool UpdatePosition();
+	void UpdateFinalHeight(bool useGroundHeight);
 	void StartFire();
+	void EmitGeoSmoke();
 	float RemainingResource(float res) const;
 	float RemainingMetal() const;
 	float RemainingEnergy() const;
-	int ChunkNumber(float f);
+	int ChunkNumber(float f) const;
 	void CalculateTransform();
 	void DependentDied(CObject *o);
 	void ChangeTeam(int newTeam);
@@ -93,24 +95,23 @@ public:
 	 * until the corpse has been fully 'repaired'.
 	 */
 	bool isRepairingBeforeResurrect;
+	bool isMoving;
+	bool inUpdateQue;
 
 	float resurrectProgress;
 	float reclaimLeft;
+	float finalHeight;
 
 	int tempNum;
 	int lastReclaim;
 
-	const FeatureDef* def;
-	const UnitDef* udef; /// type of unit this feature should be resurrected to
-
-	CMatrix44f transMatrix;
-
-	bool inUpdateQue;
 	/// which drawQuad we are part of
 	int drawQuad;
+	int fireTime;
+	int smokeTime;
 
-	float finalHeight;
-	bool reachedFinalPos;
+	const FeatureDef* def;
+	const UnitDef* udef; /// type of unit this feature should be resurrected to
 
 #if STABLE_UPDATE
 	bool stableReachedFinalPos, *pStableReachedFinalPos;
@@ -125,14 +126,14 @@ public:
 #endif
 
 	CFireProjectile* myFire;
-	int fireTime;
-	int emitSmokeTime;
 
 	/// the solid object that is on top of the geothermal
 	CSolidObject* solidOnTop;
 
 	/// initially a copy of CUnit::speed, for trees it stores the impulse that caused the destruction
 	float3 deathSpeed;
+
+	CMatrix44f transMatrix;
 
 private:
 	void PostLoad();
