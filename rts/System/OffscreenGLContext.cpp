@@ -5,6 +5,7 @@
 
 #include "System/Exceptions.h"
 #include "System/maindefines.h"
+#include "System/Log/ILog.h"
 #include "System/Platform/errorhandler.h"
 
 
