@@ -85,10 +85,12 @@ CUnitHandler::CUnitHandler()
 	if (numThreads == 0) {
 		unsigned lcpu = Threading::GetAvailableCores();
 		unsigned pcpu = Threading::GetPhysicalCores();
+		LOG_L(L_WARNING, "CPU: L = %d,  P = %d", lcpu, pcpu);
 		// deduct all logical cores dedicated to the rendering/sim main threads
 		numThreads = std::max((unsigned)GML::NumMainSimThreads(), lcpu - GML::NumMainThreads() * (int)(lcpu / pcpu) + GML::NumMainSimThreads()); // add the main sim thread
 	}
 	simNumExtraThreads = (!modInfo.multiThreadSim) ? 0 : std::max((size_t)0, numThreads - GML::NumMainSimThreads());
+	LOG_L(L_WARNING, "CPU: N = %d,  S = %d", numThreads, simNumExtraThreads);
 	Threading::SimThreadCount(simNumExtraThreads + GML::NumMainSimThreads() + (modInfo.asyncPathFinder ? 1 : 0));
 
 	if (simNumExtraThreads > 0)
@@ -508,11 +510,14 @@ void CUnitHandler::MoveTypeThreadFunc(int i) {
 }
 
 void CUnitHandler::InitThreads() {
+	LOG_L(L_WARNING, "INIT");
 	simBarrier = new boost::barrier(simNumExtraThreads + 1);
 
+	LOG_L(L_WARNING, "THREAD");
 	for (unsigned int i = 1; i <= simNumExtraThreads; i++) {
 		simThreads[i] = new boost::thread(boost::bind(&CUnitHandler::MoveTypeThreadFunc, this, i));
 	}
+	LOG_L(L_WARNING, "FINAL");
 }
 
 void CUnitHandler::CleanThreads() {
