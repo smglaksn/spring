@@ -41,34 +41,10 @@ COffscreenGLContext::COffscreenGLContext()
 	offscreenRC = NULL;
 #ifdef WGL_ARB_create_context
 	if (wglCreateContextAttribsARB) {
-#ifdef WGL_ARB_create_context_profile
-		static const int contextAttribs[] = { WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB, WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB, 0 };
-		if (!offscreenRC) {
-			offscreenRC = wglCreateContextAttribsARB(hdc, mainRC, contextAttribs);
-			if (offscreenRC)
-				LOG_L(L_WARNING, "wglCreateContextAttribsARB succeeded!");
-		}
-		static const int contextAttribs2[] = { WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB, 0 };
-		if (!offscreenRC) {
-			offscreenRC = wglCreateContextAttribsARB(hdc, mainRC, contextAttribs2);
-			if (offscreenRC)
-				LOG_L(L_WARNING, "wglCreateContextAttribsARB2 succeeded!");
-		}
-#else
-		LOG_L(L_WARNING, "WGL_ARB_create_context_profile not supported!");
-#endif
-		static const int contextAttribs3[] = { WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB, 0 };
-		if (!offscreenRC) {
-			offscreenRC = wglCreateContextAttribsARB(hdc, mainRC, contextAttribs3);
-			if (offscreenRC)
-				LOG_L(L_WARNING, "wglCreateContextAttribsARB3 succeeded!");
-		}
-		static const int contextAttribs4[] = { 0 };
-		if (!offscreenRC) {
-			offscreenRC = wglCreateContextAttribsARB(hdc, mainRC, contextAttribs4);
-			if (offscreenRC)
-				LOG_L(L_WARNING, "wglCreateContextAttribsARB4 succeeded!");
-		}
+		static const int contextAttribs[] = { WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB, 0 };
+		offscreenRC = wglCreateContextAttribsARB(hdc, mainRC, contextAttribs);
+		if (!offscreenRC)
+			LOG_L(L_WARNING, "Couldn't create an offscreen GL context: wglCreateContextAttribsARB failed!");
 	}
 #endif
 	if (!offscreenRC) {
