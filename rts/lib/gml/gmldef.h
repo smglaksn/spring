@@ -118,6 +118,7 @@
 #undef glColorPointer
 #undef glDeleteShader
 #undef glDrawElements
+#undef glGenerateMipmap
 #undef glGenerateMipmapEXT
 #undef glMaterialf
 #undef glNormalPointer
@@ -415,6 +416,7 @@
 #define glColorPointer gmlColorPointer
 #define glDeleteShader GML_NULL_CHECK(DeleteShader)
 #define glDrawElements gmlDrawElements
+#define glGenerateMipmap GML_NULL_CHECK(GenerateMipmap)
 #define glGenerateMipmapEXT GML_NULL_CHECK(GenerateMipmapEXT)
 #define glMaterialf gmlMaterialf
 #define glNormalPointer gmlNormalPointer
