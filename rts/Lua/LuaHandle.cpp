@@ -408,7 +408,7 @@ int CLuaHandle::SetupTraceback(lua_State *L)
 }
 
 
-int CLuaHandle::RunCallInTraceback(int inArgs, int outArgs, int errfuncIndex, std::string& traceback)
+int CLuaHandle::RunCallInTraceback(const LuaHashString* hs, int inArgs, int outArgs, int errfuncIndex, std::string& traceback)
 {
 	ASSERT_SINGLETHREADED_SIM(); // lua can never ever be MT-safe
 	// do not signal floating point exceptions in user Lua code
@@ -419,7 +419,11 @@ int CLuaHandle::RunCallInTraceback(int inArgs, int outArgs, int errfuncIndex, st
 	// disable GC outside of this scope to prevent sync errors and similar
 	lua_gc(L, LUA_GCRESTART, 0);
 	int top = lua_gettop(L);
+	luaContextData::MatrixData oldMD = L->lcd->PushMatrixState();
+	LuaOpenGL::InitMatrixState(L, hs);
 	const int error = lua_pcall(L, inArgs, outArgs, errfuncIndex);
+	LuaOpenGL::CheckMatrixState(L, hs, error);
+	L->lcd->PopMatrixState(oldMD);
 	lua_gc(L, LUA_GCSTOP, 0);
 
 	SetRunning(L, false);
@@ -461,7 +465,7 @@ int CLuaHandle::RunCallInTraceback(int inArgs, int outArgs, int errfuncIndex, st
 bool CLuaHandle::RunCallInTraceback(const LuaHashString& hs, int inArgs, int outArgs, int errfuncIndex)
 {
 	std::string traceback;
-	const int error = RunCallInTraceback(inArgs, outArgs, errfuncIndex, traceback);
+	const int error = RunCallInTraceback(&hs, inArgs, outArgs, errfuncIndex, traceback);
 
 	if (error != 0) {
 		LOG_L(L_ERROR, "%s::RunCallIn: error = %i, %s, %s", GetName().c_str(),
@@ -474,7 +478,7 @@ bool CLuaHandle::RunCallInTraceback(const LuaHashString& hs, int inArgs, int out
 
 int CLuaHandle::RunCallIn(int inArgs, int outArgs, std::string& errormessage)
 {
-	return RunCallInTraceback(inArgs, outArgs, 0, errormessage);
+	return RunCallInTraceback(NULL, inArgs, outArgs, 0, errormessage);
 }
 
 /******************************************************************************/
